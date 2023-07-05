@@ -132,7 +132,7 @@ async def handler(e):
             f'<p>{border}\n'
             f'{link}/{message_id} ↩</p></p>') 
 
-    if chat.username not in ['photo_posts', 'shadedPineapple', 'my_search_results', 'video_posts', 'ukr_rus_war_news', 'cyberbenb', 'Telegram']:
+    if chat.username not in ['uavideos', 'uaphotos', 'amplifyukraine', 'telehunt_video', 'telehunt_news', 'telehunt_watch', 'telehunt_broadcast']:
         try:
             await client.send_message(war_news_channel, message, link_preview=False, parse_mode='html')
         except Exception as exc:
@@ -169,10 +169,10 @@ async def handler(e):
                 f'{border}\n'
                 f'<p><b>{html.escape(chat_name)}</b>\n</p>'
                 f'{border}\n\n</p>'
-                f'<p>[ORIGINAL MESSAGE]\n'
-                f'{html.escape(untranslated_msg)}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translation)}</p></p>')
+                f'{html.escape(translation)}</p></p>'
+                f'<p>[ORIGINAL MESSAGE]\n'
+                f'{html.escape(untranslated_msg)}\n\n</p>')
         else:
             message = (
                 f'<p>{link}/{message_id} ↩\n\n' 
@@ -187,9 +187,9 @@ async def handler(e):
                 f'{border}\n'
                 f'<p><b>{html.escape(chat_name)}</b>\n</p>'
                 f'{border}\n\n</p>'
-                f'<p>[ORIGINAL MESSAGE]\n'
-                f'\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
+                f'\n\n</p>'
+                f'<p>[ORIGINAL MESSAGE]\n'
                 f'</p></p>')
             
             # Subtract 6 for ellipses; 
@@ -201,10 +201,10 @@ async def handler(e):
                 f'{border}\n'
                 f'<p><b>{html.escape(chat_name)}</b>\n</p>'
                 f'{border}\n\n</p>'
-                f'<p>[ORIGINAL MESSAGE]\n'
-                f'{html.escape(untranslated_msg)}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translated_msg)}</p></p>')
+                f'{html.escape(translation)}\n\n</p>'
+                f'<p>[ORIGINAL MESSAGE]\n'
+                f'{html.escape(untranslated_msg)}</p></p>')
             
         try:
             await client.send_message(rus_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
@@ -270,10 +270,10 @@ async def handler(e):
                 f'{border}\n'
                 f'<p><b>{html.escape(chat_name)}</b>\n</p>'
                 f'{border}\n\n</p>'
-                f'<p>[ORIGINAL MESSAGE]\n'
-                f'{html.escape(untranslated_msg)}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translation)}</p></p>')
+                f'{html.escape(translation)}</p></p>'
+                f'<p>[ORIGINAL MESSAGE]\n'
+                f'{html.escape(untranslated_msg)}\n\n</p>')
         else:
             message = (
                 f'<p>{link}/{message_id} ↩\n\n' 
@@ -288,9 +288,9 @@ async def handler(e):
                 f'{border}\n'
                 f'<p><b>{html.escape(chat_name)}</b>\n</p>'
                 f'{border}\n\n</p>'
-                f'<p>[ORIGINAL MESSAGE]\n'
-                f'\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
+                f'\n\n</p>'
+                f'<p>[ORIGINAL MESSAGE]\n'
                 f'</p></p>')
             
             # Subtract 6 for ellipses; 
@@ -302,10 +302,10 @@ async def handler(e):
                 f'{border}\n'
                 f'<p><b>{html.escape(chat_name)}</b>\n</p>'
                 f'{border}\n\n</p>'
-                f'<p>[ORIGINAL MESSAGE]\n'
-                f'{html.escape(untranslated_msg)}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translated_msg)}</p></p>')
+                f'{html.escape(translated_msg)}</p></p>'                
+                f'<p>[ORIGINAL MESSAGE]\n'
+                f'{html.escape(untranslated_msg)}\n\n</p>')
             
         try:
             await client.send_message(ukr_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
