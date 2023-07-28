@@ -7,8 +7,8 @@ import html
 import re
 
 # Logging as per docs
-logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.WARNING)
-logging.getLogger('telethon').setLevel(level=logging.WARNING)
+logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.DEBUG)
+logging.getLogger('telethon').setLevel(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Load credentials from config.yml
