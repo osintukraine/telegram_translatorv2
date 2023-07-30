@@ -162,7 +162,7 @@ async def handler(e):
 
         # Escape input text since using html parsing
         untranslated_msg = e.message.message
-        border = '~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~'
+        border = '<p></p>'
         if translation:
             message = (
                 f'<p><p>{link}/{message_id} ↩\n\n'
@@ -226,7 +226,7 @@ async def handler(e):
     
     message_id = e.id
 
-    border = '~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~'
+    border = '<p></p>'
     message = (
         f'<p>{link}/{message_id} ↩\n\n'
         f'{border}\n</p>'
@@ -263,7 +263,7 @@ async def handler(e):
 
         # Escape input text since using html parsing
         untranslated_msg = e.message.message
-        border = '~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~'
+        border = '<p></p>'
         if translation:
             message = (
                 f'<p><p>{link}/{message_id} ↩\n\n'
@@ -327,7 +327,7 @@ async def handler(e):
     
     message_id = e.id
 
-    border = '~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~'
+    border = '<p></p>'
     message = (
         f'<p>{link}/{message_id} ↩\n\n'
         f'{border}\n</p>'
