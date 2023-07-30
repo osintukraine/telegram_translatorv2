@@ -171,6 +171,7 @@ async def handler(e):
                 f'{border}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'{html.escape(translation)}</p></p>'
+                f'{border}\n'
                 f'<p>[ORIGINAL MESSAGE]\n'
                 f'{html.escape(untranslated_msg)}\n\n</p>')
         else:
@@ -189,6 +190,7 @@ async def handler(e):
                 f'{border}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'\n\n</p>'
+                f'{border}\n'
                 f'<p>[ORIGINAL MESSAGE]\n'
                 f'</p></p>')
             
@@ -203,6 +205,7 @@ async def handler(e):
                 f'{border}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'{html.escape(translation)}\n\n</p>'
+                f'{border}\n'
                 f'<p>[ORIGINAL MESSAGE]\n'
                 f'{html.escape(untranslated_msg)}</p></p>')
             
@@ -272,6 +275,7 @@ async def handler(e):
                 f'{border}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'{html.escape(translation)}</p></p>'
+                f'{border}\n'
                 f'<p>[ORIGINAL MESSAGE]\n'
                 f'{html.escape(untranslated_msg)}\n\n</p>')
         else:
@@ -290,6 +294,7 @@ async def handler(e):
                 f'{border}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'\n\n</p>'
+                f'{border}\n'
                 f'<p>[ORIGINAL MESSAGE]\n'
                 f'</p></p>')
             
@@ -303,7 +308,8 @@ async def handler(e):
                 f'<p><b>{html.escape(chat_name)}</b>\n</p>'
                 f'{border}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translated_msg)}</p></p>'                
+                f'{html.escape(translated_msg)}</p></p>'
+                f'{border}\n'                
                 f'<p>[ORIGINAL MESSAGE]\n'
                 f'{html.escape(untranslated_msg)}\n\n</p>')
             
