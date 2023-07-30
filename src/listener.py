@@ -92,7 +92,7 @@ async def handler(e):
     
     # Escape input text since using html parsing
     message_id = e.id
-    border = '~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~'
+    border = '<p></p>'
     if translation:
         message = (
             f'<p><p>{border}\n'
