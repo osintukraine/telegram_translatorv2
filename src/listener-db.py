@@ -94,9 +94,7 @@ CREATE TABLE IF NOT EXISTS messages (
     origin TEXT NOT NULL,
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     content TEXT,
-    link TEXT,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(media_id) REFERENCES media(id)
+    link TEXT
 )
 ''')
 
