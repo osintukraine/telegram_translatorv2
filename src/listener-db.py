@@ -22,6 +22,17 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 seq_matcher_logger.addHandler(file_handler)
 
+# Initialize the logger for store_message
+store_msg_logger = logging.getLogger('store_message')
+store_msg_logger.setLevel(logging.DEBUG)
+
+# Log to a separate file
+store_msg_file_handler = logging.FileHandler('store_message_logs.log')
+store_msg_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+store_msg_file_handler.setFormatter(store_msg_formatter)
+store_msg_logger.addHandler(store_msg_file_handler)
+
+
 
 # Load credentials from config.yml
 with open('config.yml', 'rb') as f:
@@ -118,8 +129,7 @@ def is_message_seen(origin, link, content):
     def store_message(origin, link, content, date):
         cursor.execute("INSERT INTO messages (origin, date, content, link) VALUES (?, ?, ?, ?)", (origin, date, content, link))
     conn.commit()
-    logger.debug(f"Stored message from segment: {origin}, link: {link}, date: {date}")
-
+    store_msg_logger.debug(f"Stored message from origin: {origin}, link: {link}, date: {date}")
 
 # Listen for new messages from my preferred channels
 @client.on(events.NewMessage(chats=preferred_channels_entities))
