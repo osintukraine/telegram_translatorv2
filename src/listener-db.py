@@ -266,6 +266,8 @@ async def handler(e):
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'{html.escape(translation)}</p></p>'
                 f'{border}\n</p>')
+        #        f'<p>[ORIGINAL MESSAGE]\n'
+        #        f'{html.escape(untranslated_msg)}\n\n</p>')                
         else:
             message = (
                 f'<p>{link}/{message_id} ↩\n\n' 
@@ -282,8 +284,11 @@ async def handler(e):
                 f'{border}\n\n</p>'
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'\n\n</p>'
-                f'{border}\n</p>')
-            
+                f'{border}\n'
+        #        f'<p>[ORIGINAL MESSAGE]\n'
+                f'</p></p>')
+
+            # Subtract 6 for ellipses; 
             desired_msg_len = (1024 - formatting_chars_len - 6) // 2
             translated_msg = f'{translation[0:desired_msg_len]}...'
             untranslated_msg = f'{untranslated_msg[0:desired_msg_len]}...'
@@ -295,6 +300,8 @@ async def handler(e):
                 f'<p>[TRANSLATED MESSAGE]\n'
                 f'{html.escape(translated_msg)}\n\n</p>'
                 f'{border}\n</p>')
+            #    f'<p>[ORIGINAL MESSAGE]\n'
+            #    f'{html.escape(untranslated_msg)}</p></p>')
             
         try:
             await client.send_message(rus_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
