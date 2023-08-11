@@ -115,10 +115,10 @@ def is_message_seen(origin, link, content):
             return True
     return False
 
-
-def store_message(origin, link, content, date):
-    cursor.execute("INSERT INTO messages (origin, date, content, link) VALUES (?, ?, ?, ?)", (origin, date, content, link))
+    def store_message(origin, link, content, date):
+        cursor.execute("INSERT INTO messages (origin, date, content, link) VALUES (?, ?, ?, ?)", (origin, date, content, link))
     conn.commit()
+    logger.debug(f"Stored message from segment: {origin}, link: {link}, date: {date}")
 
 
 # Listen for new messages from my preferred channels
