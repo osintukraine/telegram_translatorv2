@@ -138,9 +138,9 @@ async def handler(e):
     chat_name = get_channel_name(chat)
     date = e.date  # Extract the date from the event
     if chat.username:
-        channel_link = f't.me/{chat.username}'
+        link = f't.me/{chat.username}'
     else:
-        link = f't.me/c/{chat.id}/{e.id}'
+        link = f't.me/c/{chat.id}'
 
     untranslated_msg = e.message.message
 
@@ -228,9 +228,9 @@ async def handler(e):
         chat_name = get_channel_name(chat)
 
         if chat.username:
-            channel_link = f't.me/{chat.username}'
+            link = f't.me/{chat.username}'
         else:
-            link = f't.me/c/{chat.id}/{e.id}'
+            link = f't.me/c/{chat.id}'
         
         untranslated_msg = e.message.message
 
@@ -306,10 +306,10 @@ async def handler(e):
     chat_name = get_channel_name(chat)
     date = e.date  # Extract the date from the event
     if chat.username:
-        channel_link = f't.me/{chat.username}'
+        link = f't.me/{chat.username}'
     else:
-        link = f't.me/c/{chat.id}/{e.id}'
-    
+        link = f't.me/c/{chat.id}'
+
     untranslated_msg = e.message.message
 
     # Check if message has been seen using sequence matcher
@@ -352,10 +352,10 @@ async def handler(e):
         chat_name = get_channel_name(chat)
 
         if chat.username:
-            channel_link = f't.me/{chat.username}'
+            link = f't.me/{chat.username}'
         else:
-            link = f't.me/c/{chat.id}/{e.id}'
-        
+            link = f't.me/c/{chat.id}'
+
         untranslated_msg = e.message.message
 
         # Check if message has been seen using sequence matcher
@@ -422,11 +422,12 @@ async def handler(e):
     chat = await e.get_chat()
     chat_name = get_channel_name(chat)
     date = e.date  # Extract the date from the event
-    if chat.username:
-        channel_link = f't.me/{chat.username}'
-    else:
-        link = f't.me/c/{chat.id}/{e.id}'
     
+    if chat.username:
+        link = f't.me/{chat.username}'
+    else:
+        link = f't.me/c/{chat.id}'
+
     untranslated_msg = e.message.message
 
     # Check if message has been seen using sequence matcher
