@@ -111,24 +111,25 @@ CREATE TABLE IF NOT EXISTS messages (
 
 conn.commit()
 
-def is_message_seen(origin, link, content):
-    seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")
-    cursor.execute("SELECT * FROM messages WHERE origin = ? AND (content = ? OR link = ?)", (origin, content, link))
+def is_message_seen(origin, full_link, content):
+    seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {full_link}")
+    cursor.execute("SELECT * FROM messages WHERE origin = ? AND (content = ? OR link = ?)", (origin, content, full_link))
     result = cursor.fetchone()
     if result:
         stored_msg = result[2]
         matcher = SequenceMatcher(None, stored_msg, content)
         if matcher.ratio() > 0.7:  # adjust the threshold as needed
-            message_info = f"Duplicate message detected: {link}. Similarity ratio: {matcher.ratio()}"
+            message_info = f"Duplicate message detected: {full_link}. Similarity ratio: {matcher.ratio()}"
             print(message_info)
             seq_matcher_logger.debug(message_info)
             return True
     return False
 
-def store_message(origin, link, content, date):
-    cursor.execute("INSERT INTO messages (origin, date, content, link) VALUES (?, ?, ?, ?)", (origin, date, content, link))
+
+def store_message(origin, full_link, content, date):
+    cursor.execute("INSERT INTO messages (origin, date, content, link) VALUES (?, ?, ?, ?)", (origin, date, content, full_link))
     conn.commit()
-    store_msg_logger.debug(f"Stored message from origin: {origin}, link: {link}, date: {date}")
+    store_msg_logger.debug(f"Stored message from origin: {origin}, link: {full_link}, date: {date}")
 
 
 # Listen for new messages from my preferred channels
