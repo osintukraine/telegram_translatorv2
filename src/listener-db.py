@@ -138,7 +138,7 @@ async def handler(e):
     chat_name = get_channel_name(chat)
     date = e.date  # Extract the date from the event
     if chat.username:
-        link = f't.me/{chat.username}/{e.id}'
+        channel_link = f't.me/{chat.username}'
     else:
         link = f't.me/c/{chat.id}/{e.id}'
 
@@ -228,7 +228,7 @@ async def handler(e):
         chat_name = get_channel_name(chat)
 
         if chat.username:
-            link = f't.me/{chat.username}'
+            channel_link = f't.me/{chat.username}'
         else:
             link = f't.me/c/{chat.id}/{e.id}'
         
@@ -306,7 +306,7 @@ async def handler(e):
     chat_name = get_channel_name(chat)
     date = e.date  # Extract the date from the event
     if chat.username:
-        link = f't.me/{chat.username}'
+        channel_link = f't.me/{chat.username}'
     else:
         link = f't.me/c/{chat.id}/{e.id}'
     
@@ -352,7 +352,7 @@ async def handler(e):
         chat_name = get_channel_name(chat)
 
         if chat.username:
-            link = f't.me/{chat.username}'
+            channel_link = f't.me/{chat.username}'
         else:
             link = f't.me/c/{chat.id}/{e.id}'
         
@@ -423,7 +423,7 @@ async def handler(e):
     chat_name = get_channel_name(chat)
     date = e.date  # Extract the date from the event
     if chat.username:
-        link = f't.me/{chat.username}'
+        channel_link = f't.me/{chat.username}'
     else:
         link = f't.me/c/{chat.id}/{e.id}'
     
