@@ -143,6 +143,7 @@ async def handler(e):
     else:
         link = f't.me/c/{chat.id}'
 
+    message_id = e.id
     untranslated_msg = e.message.message
     full_link = f'{link}/{message_id}'
 
@@ -163,7 +164,7 @@ async def handler(e):
     translated_msg = translation.replace('Anxiety!', 'Alert!')
     
     # Escape input text since using html parsing
-    message_id = e.id
+
     border = '<br>'
     if translation:
         message = (
@@ -233,7 +234,8 @@ async def handler(e):
             link = f't.me/{chat.username}'
         else:
             link = f't.me/c/{chat.id}'
-        
+
+        message_id = e.id    
         untranslated_msg = e.message.message
         full_link = f'{link}/{message_id}'
 
@@ -245,7 +247,7 @@ async def handler(e):
             return
 
         # Escape input text since using html parsing
-        message_id = e.id
+
         border = '<br>'
         if translation:
             message = (
@@ -313,7 +315,8 @@ async def handler(e):
         link = f't.me/{chat.username}'
     else:
         link = f't.me/c/{chat.id}'
-
+    
+    message_id = e.id
     untranslated_msg = e.message.message
     full_link = f'{link}/{message_id}'
 
@@ -323,7 +326,6 @@ async def handler(e):
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
-    message_id = e.id
     border = '<br>'
     message = (
         f'<p>{link}/{message_id} ↩\n\n'
@@ -434,6 +436,7 @@ async def handler(e):
     else:
         link = f't.me/c/{chat.id}'
 
+    message_id = e.id
     untranslated_msg = e.message.message
     full_link = f'{link}/{message_id}'
 
@@ -443,7 +446,6 @@ async def handler(e):
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
-    message_id = e.id
     border = '<br>'
     message = (
         f'<p>{link}/{message_id} ↩\n\n'
