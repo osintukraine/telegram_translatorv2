@@ -148,7 +148,7 @@ async def handler(e):
     if is_message_seen ("preferred", link, untranslated_msg):
         seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")
         print(f"Message {link} has already been seen. Not forwarding.")
-    return
+        return
 
     # Translate with Google Translator (source language is auto-detected; output language is English)
     content = translator.translate(untranslated_msg)
