@@ -232,7 +232,6 @@ async def handler(e):
         else:
             link = f't.me/c/{chat.id}/{e.id}'
         
-        message_id = e.id
         untranslated_msg = e.message.message
 
         # Check if message has been seen using sequence matcher
@@ -242,6 +241,7 @@ async def handler(e):
             return
 
         # Escape input text since using html parsing
+        message_id = e.id
         border = '<br>'
         if translation:
             message = (
@@ -310,7 +310,6 @@ async def handler(e):
     else:
         link = f't.me/c/{chat.id}/{e.id}'
     
-    message_id = e.id
     untranslated_msg = e.message.message
 
     # Check if message has been seen using sequence matcher
@@ -319,6 +318,7 @@ async def handler(e):
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
+    message_id = e.id
     border = '<br>'
     message = (
         f'<p>{link}/{message_id} ↩\n\n'
@@ -356,7 +356,6 @@ async def handler(e):
         else:
             link = f't.me/c/{chat.id}/{e.id}'
         
-        message_id = e.id
         untranslated_msg = e.message.message
 
         # Check if message has been seen using sequence matcher
@@ -366,6 +365,7 @@ async def handler(e):
             return
 
         # Escape input text since using html parsing
+        message_id = e.id
         border = '<br>'
         if translation:
             message = (
@@ -427,7 +427,6 @@ async def handler(e):
     else:
         link = f't.me/c/{chat.id}/{e.id}'
     
-    message_id = e.id
     untranslated_msg = e.message.message
 
     # Check if message has been seen using sequence matcher
@@ -436,6 +435,7 @@ async def handler(e):
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
+    message_id = e.id
     border = '<br>'
     message = (
         f'<p>{link}/{message_id} ↩\n\n'
