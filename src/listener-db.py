@@ -143,10 +143,11 @@ async def handler(e):
         link = f't.me/c/{chat.id}'
 
     untranslated_msg = e.message.message
+    full_link = f'{link}/{message_id}'
 
     # Check if message has been seen using sequence matcher
-    if is_message_seen ("preferred", link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")
+    if is_message_seen ("preferred", full_link, untranslated_msg):
+        seq_matcher_logger.debug(f"Checking message from origin: {preferred}, link: {full_link}")
         print(f"Message {link} has already been seen. Not forwarding.")
         return
 
@@ -210,7 +211,7 @@ async def handler(e):
             print(exc)
 
     # Store the seen message
-    store_message("preferred", link, untranslated_msg, date)
+    store_message("preferred", full_link, untranslated_msg, date)
 
 # Listen for new Russian video messages
 @client.on(events.NewMessage(chats=rus_channels_entities, func=lambda e: hasattr(e.media, 'document')))
@@ -233,10 +234,12 @@ async def handler(e):
             link = f't.me/c/{chat.id}'
         
         untranslated_msg = e.message.message
+        full_link = f'{link}/{message_id}'
+
 
         # Check if message has been seen using sequence matcher
-        if is_message_seen("rus_video", link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: {rus_video}, link: {link}")            
+        if is_message_seen("rus_video", full_link, untranslated_msg):
+            seq_matcher_logger.debug(f"Checking message from origin: {rus_video}, link: {full_link}")            
             print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
             return
 
@@ -297,7 +300,7 @@ async def handler(e):
             print(e.message)
 
     # Store the seen message
-    store_message("rus_video", link, untranslated_msg, date)
+    store_message("rus_video", full_link, untranslated_msg, date)
 
 # Listen for new Russian photo messages
 @client.on(events.NewMessage(chats=rus_channels_entities, func=lambda e: hasattr(e.media, 'photo')))
@@ -311,10 +314,11 @@ async def handler(e):
         link = f't.me/c/{chat.id}'
 
     untranslated_msg = e.message.message
+    full_link = f'{link}/{message_id}'
 
     # Check if message has been seen using sequence matcher
-    if is_message_seen("rus_photo", link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {rus_photo}, link: {link}")    
+    if is_message_seen("rus_photo", full_link, untranslated_msg):
+        seq_matcher_logger.debug(f"Checking message from origin: {rus_photo}, link: {full_link}")    
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
@@ -334,7 +338,7 @@ async def handler(e):
         print(e.message)
 
     # Store the seen message
-    store_message("rus_photo", link, untranslated_msg, date)
+    store_message("rus_photo", full_link, untranslated_msg, date)
 
 # Listen for new Ukrainian video messages
 @client.on(events.NewMessage(chats=ukr_channels_entities, func=lambda e: hasattr(e.media, 'document')))
@@ -357,10 +361,11 @@ async def handler(e):
             link = f't.me/c/{chat.id}'
 
         untranslated_msg = e.message.message
+        full_link = f'{link}/{message_id}'
 
         # Check if message has been seen using sequence matcher
-        if is_message_seen("ukr_video", link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: {ukr_video}, link: {link}")    
+        if is_message_seen("ukr_video", full_link, untranslated_msg):
+            seq_matcher_logger.debug(f"Checking message from origin: {ukr_video}, link: {full_link}")    
             print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
             return
 
@@ -414,7 +419,7 @@ async def handler(e):
             print(e.message)
 
     # Store the seen message
-    store_message("ukr_video", link, untranslated_msg, date)
+    store_message("ukr_video", full_link, untranslated_msg, date)
 
 # Listen for new Ukrainian photo messages
 @client.on(events.NewMessage(chats=ukr_channels_entities, func=lambda e: hasattr(e.media, 'photo')))
@@ -429,10 +434,11 @@ async def handler(e):
         link = f't.me/c/{chat.id}'
 
     untranslated_msg = e.message.message
+    full_link = f'{link}/{message_id}'
 
     # Check if message has been seen using sequence matcher
-    if is_message_seen("ukr_photo", link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {ukr_photo}, link: {link}")    
+    if is_message_seen("ukr_photo", full_link, untranslated_msg):
+        seq_matcher_logger.debug(f"Checking message from origin: {ukr_photo}, link: {full_link}")    
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
@@ -452,7 +458,7 @@ async def handler(e):
         print(e.message)
 
     # Store the seen message
-    store_message("ukr_photo", link, untranslated_msg, date)
+    store_message("ukr_photo", full_link, untranslated_msg, date)
 
 # Run client until a keyboard interrupt (ctrl+C)
 client.run_until_disconnected()
