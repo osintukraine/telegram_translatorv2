@@ -87,14 +87,16 @@ conn = sqlite3.connect('messages.db')
 cursor = conn.cursor()
 
 # Create the messages table
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER NOT NULL PRIMARY KEY,
-    origin TEXT NOT NULL,  -- 'rus_video', 'ukr_video', 'rus_photo', 'ukr_photo', 'preferred'
+    origin TEXT NOT NULL,
     type TEXT NOT NULL,
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     edit_date TIMESTAMP,
     content TEXT,
+    link TEXT,
     reply_to INTEGER,
     user_id INTEGER,
     media_id INTEGER,
@@ -102,6 +104,7 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY(media_id) REFERENCES media(id)
 )
 ''')
+
 
 # Create the users table
 cursor.execute('''
