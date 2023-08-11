@@ -132,7 +132,6 @@ CREATE TABLE IF NOT EXISTS media (
 
 conn.commit()
 
-
 def is_message_seen(origin, link, content):
     cursor.execute("SELECT * FROM messages WHERE origin = ? AND (content = ? OR link = ?)", (origin, content, link))
     result = cursor.fetchone()
@@ -140,9 +139,12 @@ def is_message_seen(origin, link, content):
         stored_msg = result[2]
         matcher = SequenceMatcher(None, stored_msg, content)
         if matcher.ratio() > 0.7:  # adjust the threshold as needed
-            print(f"Duplicate message detected: {link}. Similarity ratio: {matcher.ratio()}")
+            message_info = f"Duplicate message detected: {link}. Similarity ratio: {matcher.ratio()}"
+            print(message_info)
+            seq_matcher_logger.debug(message_info)
             return True
     return False
+
 
 def store_message(origin, link, content, date):
     cursor.execute("INSERT INTO messages (origin, date, content, link) VALUES (?, ?, ?, ?)", (origin, date, content, link))
