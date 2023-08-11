@@ -18,7 +18,7 @@ seq_matcher_logger.setLevel(logging.DEBUG)
 
 # If you want to log to a separate file, uncomment and adjust the following lines:
 file_handler = logging.FileHandler('seq_matcher_logs.log')
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 seq_matcher_logger.addHandler(file_handler)
 
