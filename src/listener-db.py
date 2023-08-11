@@ -92,43 +92,14 @@ cursor.execute('''
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER NOT NULL PRIMARY KEY,
     origin TEXT NOT NULL,
-    type TEXT NOT NULL,
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    edit_date TIMESTAMP,
     content TEXT,
     link TEXT,
-    reply_to INTEGER,
-    user_id INTEGER,
-    media_id INTEGER,
     FOREIGN KEY(user_id) REFERENCES users(id),
     FOREIGN KEY(media_id) REFERENCES media(id)
 )
 ''')
 
-
-# Create the users table
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER NOT NULL PRIMARY KEY,
-    username TEXT,
-    first_name TEXT,
-    last_name TEXT,
-    tags TEXT,
-    avatar TEXT
-)
-''')
-
-# Create the media table
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS media (
-    id INTEGER NOT NULL PRIMARY KEY,
-    type TEXT,
-    url TEXT,
-    title TEXT,
-    description TEXT,
-    thumb TEXT
-)
-''')
 
 conn.commit()
 
