@@ -220,7 +220,7 @@ async def handler(e):
         if chat.username:
             link = f't.me/{chat.username}'
         else:
-            link = f't.me/c/{chat.id}'
+            link = f't.me/c/{chat.id}/{e.id}'
         
         message_id = e.id
         untranslated_msg = e.message.message
@@ -298,7 +298,7 @@ async def handler(e):
     if chat.username:
         link = f't.me/{chat.username}'
     else:
-        link = f't.me/c/{chat.id}'
+        link = f't.me/c/{chat.id}/{e.id}'
     
     message_id = e.id
     untranslated_msg = e.message.message
@@ -344,7 +344,7 @@ async def handler(e):
         if chat.username:
             link = f't.me/{chat.username}'
         else:
-            link = f't.me/c/{chat.id}'
+            link = f't.me/c/{chat.id}/{e.id}'
         
         message_id = e.id
         untranslated_msg = e.message.message
@@ -415,7 +415,7 @@ async def handler(e):
     if chat.username:
         link = f't.me/{chat.username}'
     else:
-        link = f't.me/c/{chat.id}'
+        link = f't.me/c/{chat.id}/{e.id}'
     
     message_id = e.id
     untranslated_msg = e.message.message
