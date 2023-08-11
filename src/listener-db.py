@@ -202,7 +202,7 @@ async def handler(e):
             f'<p>{border}\n'
             f'{link}/{message_id} ↩</p></p>') 
 
-    if chat.username not in ['uavideos', 'uaphotos', 'amplifyukraine', 'telehunt_video', 'telehunt_news', 'telehunt_watch', 'telehunt_broadcast']:
+    if chat.username not in ['uavideos', 'uaphotos', 'amplifyukraine', 'amplifyukr', 'telehunt_video', 'telehuntnews', 'telehunt_watch', 'telehunt_broadcast', 'telehunt_photo']:
         try:
             await client.send_message(preferred_channel, message, link_preview=False, parse_mode='html')
         except Exception as exc:
