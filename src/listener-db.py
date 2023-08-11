@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS messages (
 conn.commit()
 
 def is_message_seen(origin, link, content):
+    seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")
     cursor.execute("SELECT * FROM messages WHERE origin = ? AND (content = ? OR link = ?)", (origin, content, link))
     result = cursor.fetchone()
     if result:
