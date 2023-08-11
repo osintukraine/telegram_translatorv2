@@ -156,6 +156,7 @@ def store_message(origin, link, content, date):
 async def handler(e):
     chat = await e.get_chat()
     chat_name = get_channel_name(chat)
+    date = e.date  # Extract the date from the event
     if chat.username:
         link = f't.me/{chat.username}/{e.id}'
     else:
@@ -234,6 +235,7 @@ async def handler(e):
 @client.on(events.NewMessage(chats=rus_channels_entities, func=lambda e: hasattr(e.media, 'document')))
 async def handler(e):
     video = e.message.media.document
+    date = e.date  # Extract the date from the event
     if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
         content = translator.translate(e.message.message)
         if content.text:
@@ -320,7 +322,7 @@ async def handler(e):
 async def handler(e):
     chat = await e.get_chat()
     chat_name = get_channel_name(chat)
-
+    date = e.date  # Extract the date from the event
     if chat.username:
         link = f't.me/{chat.username}'
     else:
@@ -355,6 +357,7 @@ async def handler(e):
 @client.on(events.NewMessage(chats=ukr_channels_entities, func=lambda e: hasattr(e.media, 'document')))
 async def handler(e):
     video = e.message.media.document
+    date = e.date  # Extract the date from the event    
     if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
         content = translator.translate(e.message.message)
         if content.text:
@@ -434,7 +437,7 @@ async def handler(e):
 async def handler(e):
     chat = await e.get_chat()
     chat_name = get_channel_name(chat)
-
+    date = e.date  # Extract the date from the event
     if chat.username:
         link = f't.me/{chat.username}'
     else:
