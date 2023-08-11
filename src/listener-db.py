@@ -118,7 +118,7 @@ def is_message_seen(origin, full_link, content):
     if result:
         stored_msg = result[2]
         matcher = SequenceMatcher(None, stored_msg, content)
-        if matcher.ratio() > 0.7:  # adjust the threshold as needed
+        if matcher.ratio() > 0.9:  # adjust the threshold as needed
             message_info = f"Duplicate message detected: {full_link}. Similarity ratio: {matcher.ratio()}"
             print(message_info)
             seq_matcher_logger.debug(message_info)
