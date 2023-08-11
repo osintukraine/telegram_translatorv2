@@ -236,7 +236,7 @@ async def handler(e):
 
         # Check if message has been seen using sequence matcher
         if is_message_seen("rus_video", link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")            
+            seq_matcher_logger.debug(f"Checking message from origin: {rus_video}, link: {link}")            
             print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
             return
 
@@ -314,7 +314,7 @@ async def handler(e):
 
     # Check if message has been seen using sequence matcher
     if is_message_seen("rus_photo", link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")    
+        seq_matcher_logger.debug(f"Checking message from origin: {rus_photo}, link: {link}")    
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
@@ -360,7 +360,7 @@ async def handler(e):
 
         # Check if message has been seen using sequence matcher
         if is_message_seen("ukr_video", link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")    
+            seq_matcher_logger.debug(f"Checking message from origin: {ukr_video}, link: {link}")    
             print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
             return
 
@@ -431,7 +431,7 @@ async def handler(e):
 
     # Check if message has been seen using sequence matcher
     if is_message_seen("ukr_photo", link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {link}")    
+        seq_matcher_logger.debug(f"Checking message from origin: {ukr_photo}, link: {link}")    
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
