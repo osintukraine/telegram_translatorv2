@@ -9,8 +9,8 @@ import html
 import re
 
 # Logging as per docs
-logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.INFO)
-logging.getLogger('telethon').setLevel(level=logging.INFO)
+logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.DEBUG)
+logging.getLogger('telethon').setLevel(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 # Initialize the logger for sequence matcher
 seq_matcher_logger = logging.getLogger('seq_matcher')
@@ -18,7 +18,7 @@ seq_matcher_logger.setLevel(logging.DEBUG)
 
 # If you want to log to a separate file, uncomment and adjust the following lines:
 file_handler = logging.FileHandler('seq_matcher_logs.log')
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 file_handler.setFormatter(formatter)
 seq_matcher_logger.addHandler(file_handler)
 
@@ -139,7 +139,7 @@ def is_message_seen(origin, link, content):
     if result:
         stored_msg = result[2]
         matcher = SequenceMatcher(None, stored_msg, content)
-        if matcher.ratio() > 0.9:  # adjust the threshold as needed
+        if matcher.ratio() > 0.7:  # adjust the threshold as needed
             print(f"Duplicate message detected: {link}. Similarity ratio: {matcher.ratio()}")
             return True
     return False
