@@ -295,9 +295,9 @@ async def handler(e):
             #    f'<p>[ORIGINAL MESSAGE]\n'
             #    f'{html.escape(untranslated_msg)}</p></p>')
             
-    try:
-        await client.send_message(rus_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
-    except Exception as exc:
+        try:
+            await client.send_message(rus_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
+        except Exception as exc:
             print('[Telethon] Error while forwarding video message!')
             print(exc)
             print(e.message)
@@ -414,9 +414,9 @@ async def handler(e):
                 f'{html.escape(translated_msg)}</p></p>'
                 f'{border}\n</p>')                
             
-    try:
-        await client.send_message(ukr_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
-    except Exception as exc:
+        try:
+            await client.send_message(ukr_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
+        except Exception as exc:
             print('[Telethon] Error while forwarding video message!')
             print(exc)
             print(e.message)
