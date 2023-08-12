@@ -362,7 +362,8 @@ async def handler(e):
             link = f't.me/{chat.username}'
         else:
             link = f't.me/c/{chat.id}'
-
+        
+        message_id = e.id
         untranslated_msg = e.message.message
         full_link = f'{link}/{message_id}'
 
@@ -373,7 +374,6 @@ async def handler(e):
             return
 
         # Escape input text since using html parsing
-        message_id = e.id
         border = '<br>'
         if translation:
             message = (
