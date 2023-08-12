@@ -302,8 +302,8 @@ async def handler(e):
             print(exc)
             print(e.message)
 
-    # Store the seen message
-    store_message("rus_video", full_link, untranslated_msg, date)
+        # Store the seen message
+        store_message("rus_video", full_link, untranslated_msg, date)
 
 # Listen for new Russian photo messages
 @client.on(events.NewMessage(chats=rus_channels_entities, func=lambda e: hasattr(e.media, 'photo')))
@@ -421,8 +421,8 @@ async def handler(e):
             print(exc)
             print(e.message)
 
-    # Store the seen message
-    store_message("ukr_video", full_link, untranslated_msg, date)
+        # Store the seen message
+        store_message("ukr_video", full_link, untranslated_msg, date)
 
 # Listen for new Ukrainian photo messages
 @client.on(events.NewMessage(chats=ukr_channels_entities, func=lambda e: hasattr(e.media, 'photo')))
