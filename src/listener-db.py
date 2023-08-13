@@ -9,8 +9,8 @@ import html
 import re
 
 # Logging as per docs
-logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.DEBUG)
-logging.getLogger('telethon').setLevel(level=logging.DEBUG)
+logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.INFO)
+logging.getLogger('telethon').setLevel(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # Initialize the logger for sequence matcher
 seq_matcher_logger = logging.getLogger('seq_matcher')
