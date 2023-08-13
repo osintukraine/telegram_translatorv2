@@ -4,3 +4,4 @@
 .dockerignore
 src/config.yml
 src/*.session
+src/drones.py
