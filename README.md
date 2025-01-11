@@ -25,7 +25,7 @@ It is my hope that this will help others to engage with the stories of those who
 1. Create a Telegram account if you do not already have one (a phone number is required during sign up).
 2. Obtain a free API ID and API hash on the telegram [website](https://core.telegram.org/api).
 3. Create a config.yml file to store the API ID, API hash,
-4. Create Channels.yml with input channel names, input channel ID's, output channel name, and output channel ID. See the comments for how to obtain a channel's ID.
+4. Create config.yml with input channel names, input channel ID's, output channel name, and output channel ID. See the comments for how to obtain a channel's ID.
 
 ```yml
 # Fill in your personal API ID, API hash, and session name. The session name can be any name.
