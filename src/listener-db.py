@@ -154,7 +154,7 @@ async def handler(e):
         return
 
     # Translate with Google Translator (source language is auto-detected; output language is English)
-    content = translator.translate(untranslated_msg)
+    content = await translator.translate(untranslated_msg)
     if content.text:
         translation = content.text
     else:
@@ -221,7 +221,7 @@ async def handler(e):
     video = e.message.media.document
     date = e.date  # Extract the date from the event
     if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
-        content = translator.translate(e.message.message)
+        content = await translator.translate(e.message.message)
         if content.text:
             translation = content.text
         else:
@@ -349,7 +349,7 @@ async def handler(e):
     video = e.message.media.document
     date = e.date  # Extract the date from the event    
     if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
-        content = translator.translate(e.message.message)
+        content = await translator.translate(e.message.message)
         if content.text:
             translation = content.text
         else:
