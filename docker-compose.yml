@@ -1,0 +1,16 @@
+services:
+  telegram_translator:
+    image: my_telegram_translator:latest
+    container_name: telegram_translator
+    # Map container port 8080 to host port 8080 so you can access Flask
+    ports:
+      - "8080:8080"
+    # Restart policy if you want it always running
+    restart: unless-stopped
+    # Volumes to mount your host files/dirs into the container
+    volumes:
+      # 1) Mount a local folder into /tmp for logs
+      #    e.g. your logs stored in /tmp/telethon_listener.log or /tmp/flask_app.log
+      - ./logs:/tmp
+      # 2) Mount the messages.db file so your DB persists on the host
+      - ./messages.db:/app/src/messages.db
