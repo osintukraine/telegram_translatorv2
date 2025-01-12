@@ -13,3 +13,5 @@ src/*.sh
 *.log
 *.sh
 /venv
+/logs
+/tmp
