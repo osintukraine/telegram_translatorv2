@@ -13,4 +13,8 @@ services:
       #    e.g. your logs stored in /tmp/telethon_listener.log or /tmp/flask_app.log
       - ./logs:/tmp
       # 2) Mount the messages.db file so your DB persists on the host
-      - ./messages.db:/app/src/messages.db
+      - ./src/messages.db:/app/src/messages.db
+      - ./config.yml:/app/config.yml
+      - ./channels.yml:/app/channels.yml
+      - ./session_name.session:/app/session_name.session
+
