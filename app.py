@@ -36,24 +36,23 @@ def index():
 def logs_page():
     return render_template_string(HTML_TEMPLATE)
 
+import os
+
 @app.route("/stream_logs")
 def stream_logs():
-    """
-    Streams the tail of TELETHON_LOGFILE via SSE.
-    """
     def generate():
-        # Start at the end of the file
-        with open(TELETHON_LOGFILE, "r", encoding="utf-8") as f:
-            f.seek(0, 2)  # go to the end of the file
+        if not os.path.exists(TELETHON_LOGFILE):
+            # Optionally create an empty file
+            open(TELETHON_LOGFILE, 'w').close()
 
+        with open(TELETHON_LOGFILE, "r", encoding="utf-8") as f:
+            f.seek(0, 2)  # move to end of file
             while True:
                 line = f.readline()
                 if not line:
-                    time.sleep(0.2)  # Polling interval
+                    time.sleep(0.2)
                     continue
-                # SSE "data: <line>\n\n"
                 yield f"data: {line.rstrip()}\n\n"
-
     return Response(generate(), mimetype="text/event-stream")
 
 if __name__ == "__main__":
