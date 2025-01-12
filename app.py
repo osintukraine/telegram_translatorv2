@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # We'll tail the Telethon log file (adjust the path if needed).
-TELETHON_LOGFILE = "/tmp/telethon_listener.log"
+TELETHON_LOGFILE = "/tmp/telethon_listener.out.log"
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
