@@ -1,6 +1,8 @@
 services:
   telegram_translator:
-    image: my_telegram_translator:latest
+    image: my_telegram_translator:v3
+    environment:
+      DEEPL_AUTH_KEY: "${DEEPL_AUTH_KEY}"
     container_name: telegram_translator
     # Map container port 8080 to host port 8080 so you can access Flask
     ports:
