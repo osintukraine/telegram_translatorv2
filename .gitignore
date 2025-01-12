@@ -4,4 +4,12 @@
 .dockerignore
 src/config.yml
 src/*.session
-src/drones.py
+src/*.session-journal
+src/*.log
+src/venv/
+src/*.db
+src/*.sh
+*.db
+*.log
+*.sh
+/venv
