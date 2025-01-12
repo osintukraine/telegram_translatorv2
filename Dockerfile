@@ -2,7 +2,7 @@
 FROM python:3.10
 
 # Install Supervisor
-RUN apt-get update && apt-get install -y supervisor \
+RUN apt-get update && apt-get install -y byobu supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a directory for Supervisor configs
