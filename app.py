@@ -13,16 +13,70 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="utf-8"/>
     <title>Real-Time Logs</title>
+    <style>
+        body {
+            background-color: #1E1E1E;   /* Dark theme background */
+            color: #CFCFCF;             /* Light text */
+            font-family: Consolas, monospace;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            background-color: #333;
+            padding: 10px;
+            margin: 0;
+        }
+        #log-container {
+            padding: 10px;
+        }
+        #log {
+            white-space: pre-wrap;       /* Wrap long lines */
+            word-wrap: break-word;       /* Break long words */
+        }
+        /* Example color classes for different log levels */
+        .info    { color: #0f0; }  /* green */
+        .debug   { color: #999; }  /* grayish */
+        .warning { color: #ff0; }  /* yellow */
+        .error   { color: #f00; }  /* red */
+    </style>
 </head>
 <body>
     <h1>Telethon Listener Logs</h1>
-    <pre id="log"></pre>
+    <div id="log-container">
+      <div id="log"></div>
+    </div>
 
     <script>
+        // Connect to the Server-Sent Events endpoint
         const source = new EventSource("/stream_logs");
+
         source.onmessage = function(e) {
-            // Append each new line to the log <pre>
-            document.getElementById("log").append(e.data + "\\n");
+            const line = e.data;
+            
+            // Create a new div for each log line
+            const lineElement = document.createElement('div');
+
+            // Let’s do a simple check for keywords:
+            // e.g. if line includes "INFO", "ERROR", etc.
+            // You could refine this logic with regex to parse actual log formats.
+            if (line.includes("ERROR")) {
+                lineElement.className = "error";
+            } else if (line.includes("WARNING") || line.includes("WARN")) {
+                lineElement.className = "warning";
+            } else if (line.includes("INFO")) {
+                lineElement.className = "info";
+            } else if (line.includes("DEBUG")) {
+                lineElement.className = "debug";
+            }
+            
+            // Set the text of this line
+            lineElement.textContent = line;
+            // Append to our <div id="log">
+            document.getElementById("log").appendChild(lineElement);
+
+            // Optionally auto-scroll to bottom
+            document.getElementById("log-container").scrollTop = 
+                document.getElementById("log-container").scrollHeight;
         };
     </script>
 </body>
@@ -31,13 +85,14 @@ HTML_TEMPLATE = """
 
 @app.route("/")
 def index():
-    return "Hello from Flask! Go to <a href='/logs'>/logs</a> to view real-time logs."
+    return (
+        "Hello from Flask!<br>"
+        "Go to <a href='/logs'>/logs</a> to view real-time logs."
+    )
 
 @app.route("/logs")
 def logs_page():
     return render_template_string(HTML_TEMPLATE)
-
-import os
 
 @app.route("/stream_logs")
 def stream_logs():
@@ -47,12 +102,14 @@ def stream_logs():
             open(TELETHON_LOGFILE, 'w').close()
 
         with open(TELETHON_LOGFILE, "r", encoding="utf-8") as f:
-            f.seek(0, 2)  # move to end of file
+            # Move to the end of the file so we only read new lines
+            f.seek(0, 2)
             while True:
                 line = f.readline()
                 if not line:
                     time.sleep(0.2)
                     continue
+                # SSE format: "data: <line>\n\n"
                 yield f"data: {line.rstrip()}\n\n"
     return Response(generate(), mimetype="text/event-stream")
 

@@ -1,4 +1,7 @@
-googletrans==4.0.2
+#googletrans==4.0.2
 Telethon==1.38.1
 pyyaml
 Flask==2.2.5
+# Add deepl
+deepl==1.2.0 
+python-dotenv
