@@ -2,11 +2,21 @@ import sqlite3
 from difflib import SequenceMatcher
 from telethon import TelegramClient, events
 from telethon.tl.types import InputChannel
-from googletrans import Translator
+from dotenv import load_dotenv
+import os
+import deepl
 import logging
 import yaml
 import html
 import re
+
+# Load environment variables from .env
+load_dotenv()
+
+DEEPL_AUTH_KEY = os.getenv("DEEPL_AUTH_KEY")
+
+# Create a single Translator instance to reuse
+translator = deepl.Translator(DEEPL_AUTH_KEY)
 
 # Logging as per docs
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.INFO)
@@ -49,8 +59,6 @@ client = TelegramClient(config["session_name"], config["api_id"], config["api_ha
 client.start()
 print('[Telethon] Client is listening...')
 
-# Create a translator instance
-translator = Translator()
 
 # Get input and output Channel entities from the channel ID's
 preferred_channels_entities = []
@@ -149,19 +157,20 @@ async def handler(e):
 
     # Check if message has been seen using sequence matcher
     if is_message_seen ("preferred", full_link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {preferred}, link: {full_link}")
+        seq_matcher_logger.debug(f"Checking message from origin: preferred, link: {full_link}")
         print(f"Message {link} has already been seen. Not forwarding.")
         return
 
-    # Translate with Google Translator (source language is auto-detected; output language is English)
-    content = await translator.translate(untranslated_msg)
-    if content.text:
+    # Call DeepL's synchronous translate_text method
+    content = translator.translate_text(untranslated_msg, target_lang="EN-US")
+    # content is now a TextResult object
+    if content and content.text:
         translation = content.text
     else:
         translation = ''
 
-    # Translator mistranslates 'Тривога!' as 'Anxiety' (in this context); change to 'Alert!'
-    translated_msg = translation.replace('Anxiety!', 'Alert!')
+    # translation is now a string 
+    translated_msg = translation
     
     # Escape input text since using html parsing
 
@@ -221,11 +230,14 @@ async def handler(e):
     video = e.message.media.document
     date = e.date  # Extract the date from the event
     if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
-        content = await translator.translate(e.message.message)
-        if content.text:
+        untranslated_msg = e.message.message  # define first
+        # Call DeepL's synchronous translate_text method
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US")
+        if content and content.text:
             translation = content.text
         else:
             translation = ''
+
         
         chat = await e.get_chat()
         chat_name = get_channel_name(chat)
@@ -236,13 +248,12 @@ async def handler(e):
             link = f't.me/c/{chat.id}'
 
         message_id = e.id    
-        untranslated_msg = e.message.message
         full_link = f'{link}/{message_id}'
 
 
         # Check if message has been seen using sequence matcher
         if is_message_seen("rus_video", full_link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: {rus_video}, link: {full_link}")            
+            seq_matcher_logger.debug(f"Checking message from origin: rus_video, link: {full_link}")            
             print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
             return
 
@@ -322,7 +333,7 @@ async def handler(e):
 
     # Check if message has been seen using sequence matcher
     if is_message_seen("rus_photo", full_link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {rus_photo}, link: {full_link}")    
+        seq_matcher_logger.debug(f"Checking message from origin: rus_photo, link: {full_link}")    
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
@@ -349,8 +360,9 @@ async def handler(e):
     video = e.message.media.document
     date = e.date  # Extract the date from the event    
     if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
-        content = await translator.translate(e.message.message)
-        if content.text:
+        untranslated_msg = e.message.message  # define first
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US")
+        if content and content.text:
             translation = content.text
         else:
             translation = ''
@@ -364,12 +376,11 @@ async def handler(e):
             link = f't.me/c/{chat.id}'
         
         message_id = e.id
-        untranslated_msg = e.message.message
         full_link = f'{link}/{message_id}'
 
         # Check if message has been seen using sequence matcher
         if is_message_seen("ukr_video", full_link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: {ukr_video}, link: {full_link}")    
+            seq_matcher_logger.debug(f"Checking message from origin: ukr_video, link: {full_link}")    
             print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
             return
 
@@ -442,7 +453,7 @@ async def handler(e):
 
     # Check if message has been seen using sequence matcher
     if is_message_seen("ukr_photo", full_link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: {ukr_photo}, link: {full_link}")    
+        seq_matcher_logger.debug(f"Checking message from origin: ukr_photo, link: {full_link}")    
         print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
         return
 
