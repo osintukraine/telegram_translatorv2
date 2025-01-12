@@ -17,4 +17,4 @@ COPY src/ .
 EXPOSE 8080
 
 # Command to run on container start
-CMD [ "python", "./listener.py" ]
+CMD [ "python", "./listener-db.py" ]
