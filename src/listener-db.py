@@ -42,6 +42,10 @@ store_msg_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message
 store_msg_file_handler.setFormatter(store_msg_formatter)
 store_msg_logger.addHandler(store_msg_file_handler)
 
+# Set up logging for deepl
+logging.basicConfig()
+logging.getLogger('deepl').setLevel(logging.INFO)
+
 
 
 # Load credentials from config.yml
