@@ -1,5 +1,4 @@
 import sqlite3
-from difflib import SequenceMatcher
 from telethon import TelegramClient, events
 from telethon.tl.types import InputChannel
 from dotenv import load_dotenv
@@ -14,170 +13,86 @@ import re
 load_dotenv()
 
 DEEPL_AUTH_KEY = os.getenv("DEEPL_AUTH_KEY")
-
-# Create a single Translator instance to reuse
 translator = deepl.Translator(DEEPL_AUTH_KEY)
 
-# Logging as per docs
+# Set up logging
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.INFO)
-logging.getLogger('telethon').setLevel(level=logging.INFO)
+logging.getLogger('telethon').setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
-# Initialize the logger for sequence matcher
+
+# Additional loggers for debugging
 seq_matcher_logger = logging.getLogger('seq_matcher')
 seq_matcher_logger.setLevel(logging.DEBUG)
-
-# If you want to log to a separate file, uncomment and adjust the following lines:
 file_handler = logging.FileHandler('seq_matcher_logs.log')
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
 seq_matcher_logger.addHandler(file_handler)
 
-# Initialize the logger for store_message
 store_msg_logger = logging.getLogger('store_message')
 store_msg_logger.setLevel(logging.DEBUG)
-
-# Log to a separate file
 store_msg_file_handler = logging.FileHandler('store_message_logs.log')
-store_msg_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-store_msg_file_handler.setFormatter(store_msg_formatter)
 store_msg_logger.addHandler(store_msg_file_handler)
 
-# Set up logging for deepl
-logging.basicConfig()
-logging.getLogger('deepl').setLevel(logging.INFO)
-
-
-
-# Load credentials from config.yml
+# Load credentials and channels from config files
 with open('config.yml', 'rb') as f:
     config = yaml.safe_load(f)
-
-# Load channel ID's from channels.yml
 with open('channels.yml', 'rb') as f:
     channels = yaml.safe_load(f)
 
-# Create the client
+# Initialize Telegram client
 client = TelegramClient(config["session_name"], config["api_id"], config["api_hash"])
-
-# Connect the client
 client.start()
 print('[Telethon] Client is listening...')
 
-
-# Get input and output Channel entities from the channel ID's
-preferred_channels_entities = []
-rus_channels_entities = []
-ukr_channels_entities = []
+# Define channel entities
+ukraine_channels_entities = []
+russia_channels_entities = []
 output_channels_entities = []
 
 for d in client.iter_dialogs():
-    if d.entity.id in channels["rus_channel_ids"]:
-        rus_channels_entities.append(InputChannel(d.entity.id, d.entity.access_hash))
-    if d.entity.id in channels["ukr_channel_ids"]:
-        ukr_channels_entities.append(InputChannel(d.entity.id, d.entity.access_hash))
-    if d.entity.id in channels["preferred_channel_ids"]:
-        preferred_channels_entities.append(InputChannel(d.entity.id, d.entity.access_hash))
+    if d.entity.id in channels["ukraine_channel_ids"]:
+        ukraine_channels_entities.append(InputChannel(d.entity.id, d.entity.access_hash))
+    if d.entity.id in channels["russian_channel_ids"]:
+        russia_channels_entities.append(InputChannel(d.entity.id, d.entity.access_hash))
     if d.entity.id in channels["output_channel_ids"]:
         output_channels_entities.append(InputChannel(d.entity.id, d.entity.access_hash))
-        
-if not output_channels_entities:
-    logger.error(f"[Telethon] Could not find any output channels in the user's dialogs")
-if not rus_channels_entities and not ukr_channels_entities and not preferred_channels_entities:
-    logger.error(f"[Telethon] Could not find any input channels in the user's dialogs")
-
-# Log total number of input and output channels
-num_input_channels = len(list(set(channels["ukr_channel_ids"] + channels["rus_channel_ids"] + channels["preferred_channel_ids"])))
-num_output_channels = len(output_channels_entities)
-print(f"[Telethon] Listening to {num_input_channels} {'channel' if num_input_channels == 1 else 'channels'}.")
-print(f"[Telethon] Forwarding messages to {num_output_channels} {'channel' if num_output_channels == 1 else 'channels'}.")
 
 # Output channels
-preferred_channel = channels['output_channel_ids'][0]
-rus_videos_channel = channels['output_channel_ids'][1]
-rus_photos_channel = channels['output_channel_ids'][2]
-ukr_videos_channel = channels['output_channel_ids'][3]
-ukr_photos_channel = channels['output_channel_ids'][4]
+ukraine_news_channel = channels['output_channel_ids'][0]
+russia_news_channel = channels['output_channel_ids'][1]
+ukr_photos_channel = channels['output_channel_ids'][2]
+rus_photos_channel = channels['output_channel_ids'][3]
+ukr_videos_channel = channels['output_channel_ids'][4]
+rus_videos_channel = channels['output_channel_ids'][5]
 
-# Get the title or username of the input channel
-def get_channel_name(chat):
-    if hasattr(chat, 'title'):
-        return chat.title
-    else:
-        return chat.username
-
-# Setup SQLite Database
+# SQLite Database setup
 conn = sqlite3.connect('messages.db')
 cursor = conn.cursor()
-
-# Create the messages table
-
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER NOT NULL PRIMARY KEY,
-    origin TEXT NOT NULL,
+    channel_id INTEGER NOT NULL,
+    message_id INTEGER NOT NULL,
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     content TEXT,
     link TEXT
 )
 ''')
-
 conn.commit()
 
-def is_message_seen(origin, full_link, content):
-    seq_matcher_logger.debug(f"Checking message from origin: {origin}, link: {full_link}")
-    cursor.execute("SELECT * FROM messages WHERE origin = ? AND (content = ? OR link = ?)", (origin, content, full_link))
+# Check if message has already been processed
+def is_message_seen(channel_id, message_id):
+    cursor.execute("SELECT * FROM messages WHERE channel_id = ? AND message_id = ?", (channel_id, message_id))
     result = cursor.fetchone()
-    if result:
-        stored_msg = result[2]
-        matcher = SequenceMatcher(None, stored_msg, content)
-        if matcher.ratio() > 0.9:  # adjust the threshold as needed
-            message_info = f"Duplicate message detected: {full_link}. Similarity ratio: {matcher.ratio()}"
-            print(message_info)
-            seq_matcher_logger.debug(message_info)
-            return True
-    return False
+    return bool(result)
 
-
-def store_message(origin, full_link, content, date):
-    cursor.execute("INSERT INTO messages (origin, date, content, link) VALUES (?, ?, ?, ?)", (origin, date, content, full_link))
+# Store processed message
+def store_message(channel_id, message_id, content, link, date):
+    cursor.execute("INSERT INTO messages (channel_id, message_id, content, link, date) VALUES (?, ?, ?, ?, ?)",
+                   (channel_id, message_id, content, link, date))
     conn.commit()
-    store_msg_logger.debug(f"Stored message from origin: {origin}, link: {full_link}, date: {date}")
+    store_msg_logger.debug(f"Stored message from channel: {channel_id}, message_id: {message_id}, link: {link}")
 
-
-# Listen for new messages from my preferred channels
-@client.on(events.NewMessage(chats=preferred_channels_entities))
-async def handler(e):
-    chat = await e.get_chat()
-    chat_name = get_channel_name(chat)
-    date = e.date  # Extract the date from the event
-    if chat.username:
-        link = f't.me/{chat.username}'
-    else:
-        link = f't.me/c/{chat.id}'
-
-    message_id = e.id
-    untranslated_msg = e.message.message
-    full_link = f'{link}/{message_id}'
-
-    # Check if message has been seen using sequence matcher
-    if is_message_seen ("preferred", full_link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: preferred, link: {full_link}")
-        print(f"Message {link} has already been seen. Not forwarding.")
-        return
-
-    # Call DeepL's synchronous translate_text method
-    content = translator.translate_text(untranslated_msg, target_lang="EN-US")
-    # content is now a TextResult object
-    if content and content.text:
-        translation = content.text
-    else:
-        translation = ''
-
-    # translation is now a string 
-    translated_msg = translation
-    
-    # Escape input text since using html parsing
-
+# Prefabricate the message to send
+def create_message(chat_name, untranslated_msg, translation, link):
     border = '<br>'
     if translation:
         message = (
@@ -185,17 +100,17 @@ async def handler(e):
             f'<b>{html.escape(chat_name)}</b>\n'
             f'{border}\n\n</p>'
             f'<p>[TRANSLATED MESSAGE]\n'
-            f'{html.escape(translated_msg)}\n\n</p>'
+            f'{html.escape(translation)}\n\n</p>'
             f'<p>{border}\n'
-            f'{link}/{message_id} ↩</p></p>') 
+            f'{link} ↩</p></p>')
     else:
         message = (
             f'<p>{border}\n'
             f'<b>{html.escape(chat_name)}</b>\n'
             f'{border}\n\n'
-            f'{link}/{message_id} ↩</p>') 
+            f'{link} ↩</p>')
 
-    # Message length limit appears to be around 3980 characters; must trim longer messages or they cannot be sent
+    # Trim message if it exceeds Telegram limits
     if len(message) >= 3980:
         formatting_chars_len = len(
             f'<p><p>{border}\n' + 
@@ -204,279 +119,70 @@ async def handler(e):
             f'<p>[TRANSLATED MESSAGE]\n' + 
             f'\n\n</p>' + 
             f'<p>{border}\n' + 
-            f'{link}/{message_id} ↩</p></p>')
-        
-        # Subtract 3 for ellipsis
+            f'{link} ↩</p></p>')
         desired_msg_len = 3980 - formatting_chars_len - 3
-        translated_msg = f'{translated_msg[0:desired_msg_len]}...'
+        translation = f'{translation[0:desired_msg_len]}...'
         message = (
             f'<p><p>{border}\n'
             f'<b>{html.escape(chat_name)}</b>\n'
             f'{border}\n\n</p>'
             f'<p>[TRANSLATED MESSAGE]\n'
-            f'{html.escape(translated_msg)}\n\n</p>'
+            f'{html.escape(translation)}\n\n</p>'
             f'<p>{border}\n'
-            f'{link}/{message_id} ↩</p></p>') 
+            f'{link} ↩</p></p>')
 
-    if chat.username not in ['uavideos', 'uaphotos', 'amplifyukraine', 'amplifyukr', 'telehunt_video', 'telehuntnews', 'telehunt_watch', 'telehunt_broadcast', 'telehunt_photo']:
-        try:
-            await client.send_message(preferred_channel, message, link_preview=False, parse_mode='html')
-        except Exception as exc:
-            print('[Telethon] Error while sending message!')
-            print(exc)
+    return message
 
-    # Store the seen message
-    store_message("preferred", full_link, untranslated_msg, date)
+# Event handlers
+@client.on(events.NewMessage(chats=ukraine_channels_entities))
+async def handle_ukraine_messages(event):
+    chat = await event.get_chat()
+    chat_name = chat.title or chat.username
+    date = event.date
+    message_id = event.id
+    link = f't.me/{chat.username or f"c/{chat.id}"}/{message_id}'
 
-# Listen for new Russian video messages
-@client.on(events.NewMessage(chats=rus_channels_entities, func=lambda e: hasattr(e.media, 'document')))
-async def handler(e):
-    video = e.message.media.document
-    date = e.date  # Extract the date from the event
-    if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
-        untranslated_msg = e.message.message  # define first
-        # Call DeepL's synchronous translate_text method
-        content = translator.translate_text(untranslated_msg, target_lang="EN-US")
-        if content and content.text:
-            translation = content.text
-        else:
-            translation = ''
-
-        
-        chat = await e.get_chat()
-        chat_name = get_channel_name(chat)
-
-        if chat.username:
-            link = f't.me/{chat.username}'
-        else:
-            link = f't.me/c/{chat.id}'
-
-        message_id = e.id    
-        full_link = f'{link}/{message_id}'
-
-
-        # Check if message has been seen using sequence matcher
-        if is_message_seen("rus_video", full_link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: rus_video, link: {full_link}")            
-            print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
-            return
-
-        # Escape input text since using html parsing
-
-        border = '<br>'
-        if translation:
-            message = (
-                f'<p><p>{link}/{message_id} ↩\n\n'
-                f'{border}\n'
-                f'<p><b>{html.escape(chat_name)}</b>\n</p>'
-                f'{border}\n\n</p>'
-                f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translation)}</p></p>'
-                f'{border}\n</p>')
-        #        f'<p>[ORIGINAL MESSAGE]\n'
-        #        f'{html.escape(untranslated_msg)}\n\n</p>')                
-        else:
-            message = (
-                f'<p>{link}/{message_id} ↩\n\n' 
-                f'{border}\n'
-                f'<b>{html.escape(chat_name)}</b>\n'
-                f'{border}</p>')
-
-        # Video message length limit appears to be around 1024 characters; must trim longer messages or they cannot be sent
-        if len(message) >= 1024:
-            formatting_chars_len = len(
-                f'<p><p>{link}/{message_id} ↩\n\n'
-                f'{border}\n'
-                f'<p><b>{html.escape(chat_name)}</b>\n</p>'
-                f'{border}\n\n</p>'
-                f'<p>[TRANSLATED MESSAGE]\n'
-                f'\n\n</p>'
-                f'{border}\n'
-        #        f'<p>[ORIGINAL MESSAGE]\n'
-                f'</p></p>')
-
-            # Subtract 6 for ellipses; 
-            desired_msg_len = (1024 - formatting_chars_len - 6) // 2
-            translated_msg = f'{translation[0:desired_msg_len]}...'
-            untranslated_msg = f'{untranslated_msg[0:desired_msg_len]}...'
-            message = (
-                f'<p><p>{link}/{message_id} ↩\n\n'
-                f'{border}\n'
-                f'<p><b>{html.escape(chat_name)}</b>\n</p>'
-                f'{border}\n\n</p>'
-                f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translated_msg)}\n\n</p>'
-                f'{border}\n</p>')
-            #    f'<p>[ORIGINAL MESSAGE]\n'
-            #    f'{html.escape(untranslated_msg)}</p></p>')
-            
-        try:
-            await client.send_message(rus_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
-        except Exception as exc:
-            print('[Telethon] Error while forwarding video message!')
-            print(exc)
-            print(e.message)
-
-        # Store the seen message
-        store_message("rus_video", full_link, untranslated_msg, date)
-
-# Listen for new Russian photo messages
-@client.on(events.NewMessage(chats=rus_channels_entities, func=lambda e: hasattr(e.media, 'photo')))
-async def handler(e):
-    chat = await e.get_chat()
-    chat_name = get_channel_name(chat)
-    date = e.date  # Extract the date from the event
-    if chat.username:
-        link = f't.me/{chat.username}'
+    if event.message.photo:
+        untranslated_msg = event.message.message or ""
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+        message = create_message(chat_name, untranslated_msg, content, link)
+        await client.send_message(ukraine_news_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+        await client.send_message(ukr_photos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+    elif event.message.document and re.search('video', event.message.media.document.mime_type):
+        untranslated_msg = event.message.message or ""
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+        message = create_message(chat_name, untranslated_msg, content, link)
+        await client.send_message(ukr_videos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
     else:
-        link = f't.me/c/{chat.id}'
-    
-    message_id = e.id
-    untranslated_msg = e.message.message
-    full_link = f'{link}/{message_id}'
+        untranslated_msg = event.message.message or ""
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+        message = create_message(chat_name, untranslated_msg, content, link)
+        await client.send_message(ukraine_news_channel, message, parse_mode='html', link_preview=False)
 
-    # Check if message has been seen using sequence matcher
-    if is_message_seen("rus_photo", full_link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: rus_photo, link: {full_link}")    
-        print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
-        return
+@client.on(events.NewMessage(chats=russia_channels_entities))
+async def handle_russia_messages(event):
+    chat = await event.get_chat()
+    chat_name = chat.title or chat.username
+    date = event.date
+    message_id = event.id
+    link = f't.me/{chat.username or f"c/{chat.id}"}/{message_id}'
 
-    border = '<br>'
-    message = (
-        f'<p>{link}/{message_id} ↩\n\n'
-        f'{border}\n</p>'
-        f'<b>{chat_name}</b>\n'
-        f'{border}</p>')
-
-    try:
-        await client.send_message(rus_photos_channel, message, parse_mode='html', file=e.media, link_preview=False)
-    except Exception as exc:
-        print('[Telethon] Error while forwarding photo message!')
-        print(exc)
-        print(e.message)
-
-    # Store the seen message
-    store_message("rus_photo", full_link, untranslated_msg, date)
-
-# Listen for new Ukrainian video messages
-@client.on(events.NewMessage(chats=ukr_channels_entities, func=lambda e: hasattr(e.media, 'document')))
-async def handler(e):
-    video = e.message.media.document
-    date = e.date  # Extract the date from the event    
-    if hasattr(video, 'mime_type') and bool(re.search('video', video.mime_type)):
-        untranslated_msg = e.message.message  # define first
-        content = translator.translate_text(untranslated_msg, target_lang="EN-US")
-        if content and content.text:
-            translation = content.text
-        else:
-            translation = ''
-        
-        chat = await e.get_chat()
-        chat_name = get_channel_name(chat)
-
-        if chat.username:
-            link = f't.me/{chat.username}'
-        else:
-            link = f't.me/c/{chat.id}'
-        
-        message_id = e.id
-        full_link = f'{link}/{message_id}'
-
-        # Check if message has been seen using sequence matcher
-        if is_message_seen("ukr_video", full_link, untranslated_msg):
-            seq_matcher_logger.debug(f"Checking message from origin: ukr_video, link: {full_link}")    
-            print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
-            return
-
-        # Escape input text since using html parsing
-        border = '<br>'
-        if translation:
-            message = (
-                f'<p><p>{link}/{message_id} ↩\n\n'
-                f'{border}\n'
-                f'<p><b>{html.escape(chat_name)}</b>\n</p>'
-                f'{border}\n\n</p>'
-                f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translation)}</p></p>'
-                f'{border}\n</p>')
-        else:
-            message = (
-                f'<p>{link}/{message_id} ↩\n\n' 
-                f'{border}\n'
-                f'<b>{html.escape(chat_name)}</b>\n'
-                f'{border}</p>')
-
-        # Video message length limit appears to be around 1024 characters; must trim longer messages or they cannot be sent
-        if len(message) >= 1024:
-            formatting_chars_len = len(
-                f'<p><p>{link}/{message_id} ↩\n\n'
-                f'{border}\n'
-                f'<p><b>{html.escape(chat_name)}</b>\n</p>'
-                f'{border}\n\n</p>'
-                f'<p>[TRANSLATED MESSAGE]\n'
-                f'\n\n</p>'
-                f'{border}\n')
-            
-            # Subtract 6 for ellipses; 
-            desired_msg_len = (1024 - formatting_chars_len - 6) // 2
-            translated_msg = f'{translation[0:desired_msg_len]}...'
-            message = (
-                f'<p><p>{link}/{message_id} ↩\n\n'
-                f'{border}\n'
-                f'<p><b>{html.escape(chat_name)}</b>\n</p>'
-                f'{border}\n\n</p>'
-                f'<p>[TRANSLATED MESSAGE]\n'
-                f'{html.escape(translated_msg)}</p></p>'
-                f'{border}\n</p>')                
-            
-        try:
-            await client.send_message(ukr_videos_channel, message, parse_mode='html', file=e.media, link_preview=False)
-        except Exception as exc:
-            print('[Telethon] Error while forwarding video message!')
-            print(exc)
-            print(e.message)
-
-        # Store the seen message
-        store_message("ukr_video", full_link, untranslated_msg, date)
-
-# Listen for new Ukrainian photo messages
-@client.on(events.NewMessage(chats=ukr_channels_entities, func=lambda e: hasattr(e.media, 'photo')))
-async def handler(e):
-    chat = await e.get_chat()
-    chat_name = get_channel_name(chat)
-    date = e.date  # Extract the date from the event
-    
-    if chat.username:
-        link = f't.me/{chat.username}'
+    if event.message.photo:
+        untranslated_msg = event.message.message or ""
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+        message = create_message(chat_name, untranslated_msg, content, link)
+        await client.send_message(russia_news_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+        await client.send_message(rus_photos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+    elif event.message.document and re.search('video', event.message.media.document.mime_type):
+        untranslated_msg = event.message.message or ""
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+        message = create_message(chat_name, untranslated_msg, content, link)
+        await client.send_message(rus_videos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
     else:
-        link = f't.me/c/{chat.id}'
+        untranslated_msg = event.message.message or ""
+        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+        message = create_message(chat_name, untranslated_msg, content, link)
+        await client.send_message(russia_news_channel, message, parse_mode='html', link_preview=False)
 
-    message_id = e.id
-    untranslated_msg = e.message.message
-    full_link = f'{link}/{message_id}'
-
-    # Check if message has been seen using sequence matcher
-    if is_message_seen("ukr_photo", full_link, untranslated_msg):
-        seq_matcher_logger.debug(f"Checking message from origin: ukr_photo, link: {full_link}")    
-        print(f"Message {link}/{message_id} has already been seen. Not forwarding.")
-        return
-
-    border = '<br>'
-    message = (
-        f'<p>{link}/{message_id} ↩\n\n'
-        f'{border}\n</p>'
-        f'<b>{chat_name}</b>\n'
-        f'{border}</p>')
-
-    try:
-        await client.send_message(ukr_photos_channel, message, parse_mode='html', file=e.media, link_preview=False)
-    except Exception as exc:
-        print('[Telethon] Error while forwarding photo message!')
-        print(exc)
-        print(e.message)
-
-    # Store the seen message
-    store_message("ukr_photo", full_link, untranslated_msg, date)
-
-# Run client until a keyboard interrupt (ctrl+C)
+# Run client
 client.run_until_disconnected()
