@@ -142,6 +142,9 @@ async def handle_ukraine_messages(event):
     message_id = event.id
     link = f't.me/{chat.username or f"c/{chat.id}"}/{message_id}'
 
+    # Log the incoming message details
+    logger.info(f"Received message from Ukraine channel: {chat_name}, ID: {message_id}")
+
     if event.message.photo:
         untranslated_msg = event.message.message or ""
         content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
@@ -159,6 +162,8 @@ async def handle_ukraine_messages(event):
         message = create_message(chat_name, untranslated_msg, content, link)
         await client.send_message(ukraine_news_channel, message, parse_mode='html', link_preview=False)
 
+    store_message(chat.id, message_id, untranslated_msg, link, date)
+
 @client.on(events.NewMessage(chats=russia_channels_entities))
 async def handle_russia_messages(event):
     chat = await event.get_chat()
@@ -166,6 +171,9 @@ async def handle_russia_messages(event):
     date = event.date
     message_id = event.id
     link = f't.me/{chat.username or f"c/{chat.id}"}/{message_id}'
+
+    # Log the incoming message details
+    logger.info(f"Received message from Russia channel: {chat_name}, ID: {message_id}")
 
     if event.message.photo:
         untranslated_msg = event.message.message or ""
@@ -183,6 +191,8 @@ async def handle_russia_messages(event):
         content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
         message = create_message(chat_name, untranslated_msg, content, link)
         await client.send_message(russia_news_channel, message, parse_mode='html', link_preview=False)
+
+    store_message(chat.id, message_id, untranslated_msg, link, date)
 
 # Run client
 client.run_until_disconnected()
