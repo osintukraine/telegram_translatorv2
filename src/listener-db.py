@@ -145,19 +145,27 @@ async def handle_ukraine_messages(event):
     # Log the incoming message details
     logger.info(f"Received message from Ukraine channel: {chat_name}, ID: {message_id}")
 
-    if event.message.photo:
-        untranslated_msg = event.message.message or ""
-        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
-        message = create_message(chat_name, untranslated_msg, content, link)
-        await client.send_message(ukraine_news_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
-        await client.send_message(ukr_photos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
-    elif event.message.document and re.search('video', event.message.media.document.mime_type):
-        untranslated_msg = event.message.message or ""
-        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
-        message = create_message(chat_name, untranslated_msg, content, link)
-        await client.send_message(ukr_videos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+    untranslated_msg = event.message.message or ""
+    if event.message.media:
+        if isinstance(event.message.media, MessageMediaWebPage):
+            logger.info(f"Handling a web page message from {chat_name}, ID: {message_id}")
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(ukraine_news_channel, message, parse_mode='html', link_preview=True)
+        elif event.message.photo:
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(ukraine_news_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+            await client.send_message(ukr_photos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+        elif event.message.document and re.search('video', event.message.media.document.mime_type):
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(ukr_videos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+        else:
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(ukraine_news_channel, message, parse_mode='html', link_preview=False)
     else:
-        untranslated_msg = event.message.message or ""
         content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
         message = create_message(chat_name, untranslated_msg, content, link)
         await client.send_message(ukraine_news_channel, message, parse_mode='html', link_preview=False)
@@ -175,19 +183,27 @@ async def handle_russia_messages(event):
     # Log the incoming message details
     logger.info(f"Received message from Russia channel: {chat_name}, ID: {message_id}")
 
-    if event.message.photo:
-        untranslated_msg = event.message.message or ""
-        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
-        message = create_message(chat_name, untranslated_msg, content, link)
-        await client.send_message(russia_news_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
-        await client.send_message(rus_photos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
-    elif event.message.document and re.search('video', event.message.media.document.mime_type):
-        untranslated_msg = event.message.message or ""
-        content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
-        message = create_message(chat_name, untranslated_msg, content, link)
-        await client.send_message(rus_videos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+    untranslated_msg = event.message.message or ""
+    if event.message.media:
+        if isinstance(event.message.media, MessageMediaWebPage):
+            logger.info(f"Handling a web page message from {chat_name}, ID: {message_id}")
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(russia_news_channel, message, parse_mode='html', link_preview=True)
+        elif event.message.photo:
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(russia_news_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+            await client.send_message(rus_photos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+        elif event.message.document and re.search('video', event.message.media.document.mime_type):
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(rus_videos_channel, message, parse_mode='html', file=event.message.media, link_preview=False)
+        else:
+            content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
+            message = create_message(chat_name, untranslated_msg, content, link)
+            await client.send_message(russia_news_channel, message, parse_mode='html', link_preview=False)
     else:
-        untranslated_msg = event.message.message or ""
         content = translator.translate_text(untranslated_msg, target_lang="EN-US").text if untranslated_msg else ""
         message = create_message(chat_name, untranslated_msg, content, link)
         await client.send_message(russia_news_channel, message, parse_mode='html', link_preview=False)
