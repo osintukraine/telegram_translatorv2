@@ -1,6 +1,6 @@
 services:
   telegram_translator:
-    image: my_telegram_translator:v5
+    image: my_telegram_translator:v6
     environment:
       DEEPL_AUTH_KEY: "${DEEPL_AUTH_KEY}"
     container_name: telegram_translator
