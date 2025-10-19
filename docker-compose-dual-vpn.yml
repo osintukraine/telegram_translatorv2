@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Ukraine session - routes through Mullvad Sweden
+  ukraine_listener:
+    image: my_telegram_translator:v6
+    container_name: telegram_ukraine
+    environment:
+      DEEPL_AUTH_KEY: "${DEEPL_AUTH_KEY}"
+      SESSION_TYPE: "ukraine"
+    network_mode: "service:mullvad_sweden"
+    depends_on:
+      - mullvad_sweden
+    volumes:
+      - ./logs/ukraine:/tmp
+      - ./src/messages.db:/app/src/messages.db
+      - ./config-dual.yml:/app/config-dual.yml
+      - ./channels.yml:/app/channels.yml
+      - ./ukraine_session.session:/app/ukraine_session.session
+    restart: unless-stopped
+    command: python /app/src/listener-ukraine-only.py
+
+  # Russia session - routes through Mullvad Netherlands
+  russia_listener:
+    image: my_telegram_translator:v6
+    container_name: telegram_russia
+    environment:
+      DEEPL_AUTH_KEY: "${DEEPL_AUTH_KEY}"
+      SESSION_TYPE: "russia"
+    network_mode: "service:mullvad_netherlands"
+    depends_on:
+      - mullvad_netherlands
+    volumes:
+      - ./logs/russia:/tmp
+      - ./src/messages.db:/app/src/messages.db
+      - ./config-dual.yml:/app/config-dual.yml
+      - ./channels.yml:/app/channels.yml
+      - ./russia_session.session:/app/russia_session.session
+    restart: unless-stopped
+    command: python /app/src/listener-russia-only.py
+
+  # Mullvad VPN container for Ukraine session (Sweden server)
+  mullvad_sweden:
+    image: ghcr.io/edgd1er/mullvad-proxy:latest
+    container_name: mullvad_sweden
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - MULLVAD_ACCOUNT=${MULLVAD_ACCOUNT}
+      - MULLVAD_RELAY=se-sto  # Sweden Stockholm
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    restart: unless-stopped
+
+  # Mullvad VPN container for Russia session (Netherlands server)
+  mullvad_netherlands:
+    image: ghcr.io/edgd1er/mullvad-proxy:latest
+    container_name: mullvad_netherlands
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - MULLVAD_ACCOUNT=${MULLVAD_ACCOUNT}
+      - MULLVAD_RELAY=nl-ams  # Netherlands Amsterdam
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    restart: unless-stopped
+
+  # Flask web interface (shares network with one of the VPN containers)
+  flask_app:
+    image: my_telegram_translator:v6
+    container_name: telegram_flask
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/tmp
+    restart: unless-stopped
+    command: python /app/app.py

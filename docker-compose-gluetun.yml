@@ -1,0 +1,82 @@
+version: '3.8'
+
+# Simple approach: Use Gluetun VPN containers with Mullvad
+# Each listener gets its own VPN container with different exit location
+
+services:
+  # Gluetun VPN for Ukraine session (Sweden exit)
+  vpn_ukraine:
+    image: qmcgaw/gluetun
+    container_name: vpn_ukraine
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - VPN_SERVICE_PROVIDER=mullvad
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${MULLVAD_PRIVATE_KEY_UKRAINE}
+      - WIREGUARD_ADDRESSES=${MULLVAD_ADDRESS_UKRAINE}
+      - SERVER_COUNTRIES=Sweden
+      - SERVER_CITIES=Stockholm
+    restart: unless-stopped
+
+  # Ukraine listener - routes through Sweden VPN
+  ukraine_listener:
+    image: my_telegram_translator:v6
+    container_name: telegram_ukraine
+    network_mode: "service:vpn_ukraine"
+    depends_on:
+      - vpn_ukraine
+    environment:
+      DEEPL_AUTH_KEY: "${DEEPL_AUTH_KEY}"
+    volumes:
+      - ./logs/ukraine:/tmp
+      - ./src/messages.db:/app/src/messages.db
+      - ./config-dual.yml:/app/config-dual.yml
+      - ./channels.yml:/app/channels.yml
+      - ./ukraine_session.session:/app/ukraine_session.session
+    restart: unless-stopped
+    command: python /app/src/listener-ukraine-only.py
+
+  # Gluetun VPN for Russia session (Netherlands exit)
+  vpn_russia:
+    image: qmcgaw/gluetun
+    container_name: vpn_russia
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - VPN_SERVICE_PROVIDER=mullvad
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${MULLVAD_PRIVATE_KEY_RUSSIA}
+      - WIREGUARD_ADDRESSES=${MULLVAD_ADDRESS_RUSSIA}
+      - SERVER_COUNTRIES=Netherlands
+      - SERVER_CITIES=Amsterdam
+    restart: unless-stopped
+
+  # Russia listener - routes through Netherlands VPN
+  russia_listener:
+    image: my_telegram_translator:v6
+    container_name: telegram_russia
+    network_mode: "service:vpn_russia"
+    depends_on:
+      - vpn_russia
+    environment:
+      DEEPL_AUTH_KEY: "${DEEPL_AUTH_KEY}"
+    volumes:
+      - ./logs/russia:/tmp
+      - ./src/messages.db:/app/src/messages.db
+      - ./config-dual.yml:/app/config-dual.yml
+      - ./channels.yml:/app/channels.yml
+      - ./russia_session.session:/app/russia_session.session
+    restart: unless-stopped
+    command: python /app/src/listener-russia-only.py
+
+  # Flask web viewer (no VPN)
+  flask_app:
+    image: my_telegram_translator:v6
+    container_name: telegram_flask
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/tmp
+    restart: unless-stopped
+    command: python /app/app.py
