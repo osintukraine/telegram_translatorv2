@@ -248,7 +248,12 @@ async def handle_message(event, news_channel, photos_channel, videos_channel, co
         # Handle media messages
         if event.message.media:
             if isinstance(event.message.media, MessageMediaWebPage):
-                logger.warning(f"Unsupported media: Channel {chat.id}, Message ID {message_id}")
+                # Web page previews - forward as text-only message
+                logger.debug(f"Web page preview: Channel {chat.id}, Message ID {message_id}")
+                content = await translate_async(untranslated_msg) if untranslated_msg else ""
+                message = create_message(chat_name, untranslated_msg, content, link)
+                await send_with_retry(news_channel, message)
+                store_message(chat.id, message_id, untranslated_msg, link, date)
                 return
 
             # Translate text if present (async, non-blocking)
@@ -267,6 +272,11 @@ async def handle_message(event, news_channel, photos_channel, videos_channel, co
                 else:
                     # Send other documents to news channel
                     await send_with_retry(news_channel, message, file=event.message.media)
+            else:
+                # Unknown media type - log it and forward as text
+                media_type = type(event.message.media).__name__
+                logger.warning(f"Unknown media type '{media_type}' from {chat.id}/{message_id} - forwarding text only")
+                await send_with_retry(news_channel, message)
         else:
             # Text-only message
             content = await translate_async(untranslated_msg) if untranslated_msg else ""
