@@ -258,21 +258,31 @@ DASHBOARD_TEMPLATE = """
                                     <p class="text-xs text-slate-400 mb-1">Original Content Preview:</p>
                                     <p class="text-sm text-slate-300 font-mono text-xs" x-text="msg.content_preview"></p>
                                 </div>
-                                <!-- False Positive Recovery -->
-                                <div class="flex gap-2 items-center">
+                                <!-- Actions -->
+                                <div class="flex gap-2 items-center flex-wrap">
                                     <button @click="unmarkSpam(msg.id, false)"
-                                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                                            :disabled="msg.recovering || msg.dismissed"
+                                            class="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-3 py-1 rounded text-sm">
                                         ✓ Not Spam (Learn)
                                     </button>
                                     <button @click="unmarkSpam(msg.id, true)"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                            :disabled="msg.recovering || msg.dismissed"
+                                            class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-3 py-1 rounded text-sm">
                                         ✓ Not Spam + Forward
+                                    </button>
+                                    <button @click="dismissSpam(msg.id)"
+                                            :disabled="msg.recovering || msg.dismissed"
+                                            class="bg-slate-600 hover:bg-slate-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-3 py-1 rounded text-sm">
+                                        ✕ Dismiss
                                     </button>
                                     <span x-show="msg.recovering" class="text-xs text-yellow-300">
                                         ⏳ Processing...
                                     </span>
                                     <span x-show="msg.recovered" class="text-xs text-green-300">
                                         ✓ Recovered! Patterns learned.
+                                    </span>
+                                    <span x-show="msg.dismissed" class="text-xs text-slate-400">
+                                        ✓ Dismissed
                                     </span>
                                 </div>
                             </div>
@@ -389,6 +399,7 @@ DASHBOARD_TEMPLATE = """
                         this.spam.messages.forEach(msg => {
                             msg.recovering = false;
                             msg.recovered = false;
+                            msg.dismissed = false;
                         });
                     } catch (error) {
                         console.error('Failed to load spam:', error);
@@ -425,6 +436,38 @@ DASHBOARD_TEMPLATE = """
                     } catch (error) {
                         console.error('Failed to unmark spam:', error);
                         alert('Failed to unmark spam: ' + error.message);
+                    }
+                },
+
+                async dismissSpam(spamId) {
+                    try {
+                        // Find message and mark as dismissed
+                        const msg = this.spam.messages.find(m => m.id === spamId);
+                        if (msg) msg.dismissed = true;
+
+                        const response = await fetch(`/api/spam/${spamId}`, {
+                            method: 'DELETE'
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            // Remove from UI after short delay for visual feedback
+                            setTimeout(() => {
+                                this.spam.messages = this.spam.messages.filter(m => m.id !== spamId);
+                                this.spam.total--;
+                            }, 500);
+                            // Reload stats to update counts
+                            await this.loadStats();
+                        } else {
+                            alert('Error: ' + (result.error || 'Unknown error'));
+                            if (msg) msg.dismissed = false;
+                        }
+                    } catch (error) {
+                        console.error('Failed to dismiss spam:', error);
+                        alert('Failed to dismiss spam: ' + error.message);
+                        const msg = this.spam.messages.find(m => m.id === spamId);
+                        if (msg) msg.dismissed = false;
                     }
                 },
 
@@ -662,6 +705,20 @@ def api_delete_pattern(pattern_id):
         from spam_learning import delete_learned_pattern
 
         success = delete_learned_pattern(pattern_id)
+        return jsonify({'success': success})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/spam/<int:spam_id>", methods=["DELETE"])
+def api_delete_spam(spam_id):
+    """Delete a spam entry (dismiss from dashboard)."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM spam_filtered WHERE id = ?", (spam_id,))
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
         return jsonify({'success': success})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
