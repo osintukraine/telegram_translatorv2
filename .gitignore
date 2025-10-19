@@ -3,6 +3,8 @@
 /__pycache__
 .dockerignore
 config.yml
+config-dual.yml
+channels.yml
 *.session
 *.session-journal
 src/*.log
