@@ -16,3 +16,4 @@ src/*.db
 .env
 *.sh
 src/channels.yml
+/analysis
