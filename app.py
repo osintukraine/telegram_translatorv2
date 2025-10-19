@@ -102,8 +102,15 @@ def stream_logs():
             open(TELETHON_LOGFILE, 'w').close()
 
         with open(TELETHON_LOGFILE, "r", encoding="utf-8") as f:
-            # Move to the end of the file so we only read new lines
-            f.seek(0, 2)
+            # First, send all existing logs (last 100 lines)
+            # Seek to beginning to read existing content
+            f.seek(0)
+            all_lines = f.readlines()
+            # Send last 100 lines of existing logs
+            for line in all_lines[-100:]:
+                yield f"data: {line.rstrip()}\n\n"
+
+            # Now continue tailing new lines
             while True:
                 line = f.readline()
                 if not line:
