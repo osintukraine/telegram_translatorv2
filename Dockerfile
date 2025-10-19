@@ -16,6 +16,10 @@ WORKDIR /app
 # Copy requirements.txt first, so Docker can cache the layer
 COPY requirements.txt /app/
 
+# Upgrade pip 
+RUN pip install --no-cache-dir --upgrade pip
+
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
