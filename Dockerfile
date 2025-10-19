@@ -5,8 +5,10 @@ FROM python:3.10
 RUN apt-get update && apt-get install -y byobu supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a directory for Supervisor configs
-RUN mkdir -p /etc/supervisor/conf.d
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /etc/supervisor/conf.d /app /tmp && \
+    chown -R appuser:appuser /app /tmp /var/log/supervisor /var/run
 
 # Create our working directory
 WORKDIR /app
@@ -23,6 +25,12 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Now copy the rest of the project
 # (app.py, src folder, etc.)
 COPY . /app/
+
+# Ensure appuser owns everything
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Expose the Flask port (if your app uses port 8080)
 EXPOSE 8080
