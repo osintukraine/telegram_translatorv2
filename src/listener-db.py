@@ -14,6 +14,7 @@ import yaml
 import html
 import re
 from datetime import datetime
+from spam_filter import is_spam
 
 # Load environment variables
 load_dotenv()
@@ -91,9 +92,25 @@ def init_database():
             UNIQUE(channel_id, message_id)
         )
         ''')
+        # Create spam tracking table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS spam_filtered (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            channel_id INTEGER NOT NULL,
+            message_id INTEGER NOT NULL,
+            date TIMESTAMP NOT NULL,
+            spam_type TEXT NOT NULL,
+            reason TEXT,
+            content_preview TEXT,
+            link TEXT,
+            UNIQUE(channel_id, message_id)
+        )
+        ''')
         # Create indexes for better performance
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_date ON messages(date DESC)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_channel ON messages(channel_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_spam_date ON spam_filtered(date DESC)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_spam_type ON spam_filtered(spam_type)')
         conn.commit()
         logger.info("Database initialized successfully")
     finally:
@@ -130,6 +147,24 @@ def store_message(channel_id, message_id, content, link, date):
             logger.debug(f"Duplicate message skipped: Channel {channel_id}, Message ID {message_id}")
     except Exception as e:
         logger.error(f"Failed to store message {channel_id}/{message_id}: {e}", exc_info=True)
+    finally:
+        conn.close()
+
+def store_spam(channel_id, message_id, spam_type, reason, content, link, date):
+    """Store filtered spam message for metrics and analysis."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        # Truncate content preview to 200 chars
+        content_preview = (content[:200] + '...') if len(content) > 200 else content
+        cursor.execute(
+            "INSERT OR IGNORE INTO spam_filtered (channel_id, message_id, date, spam_type, reason, content_preview, link) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (channel_id, message_id, date, spam_type, reason, content_preview, link)
+        )
+        conn.commit()
+        logger.debug(f"Stored spam: {spam_type} - Channel {channel_id}, Message ID {message_id}")
+    except Exception as e:
+        logger.error(f"Failed to store spam record {channel_id}/{message_id}: {e}", exc_info=True)
     finally:
         conn.close()
 
@@ -252,6 +287,18 @@ async def handle_message(event, news_channel, photos_channel, videos_channel, co
             return
 
         untranslated_msg = event.message.message or ""
+
+        # Check for spam (financial spam, off-topic content)
+        is_spam_message, spam_reason = is_spam(untranslated_msg, link)
+        if is_spam_message:
+            logger.info(f"Skipping spam message: {spam_reason} - {link}")
+            # Determine spam type from reason
+            spam_type = "financial" if "Financial spam" in spam_reason else "off-topic"
+            # Store spam for metrics
+            store_spam(chat.id, message_id, spam_type, spam_reason, untranslated_msg, link, date)
+            # Also store as seen to avoid reprocessing
+            store_message(chat.id, message_id, untranslated_msg, link, date)
+            return
 
         # Handle media messages
         if event.message.media:
