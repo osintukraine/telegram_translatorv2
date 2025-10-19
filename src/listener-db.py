@@ -69,7 +69,7 @@ rus_videos_channel = channels['output_channel_ids'][5]
 # Database helper functions with proper connection management
 def get_db_connection():
     """Get a new database connection with proper settings."""
-    conn = sqlite3.connect('messages.db', timeout=10.0)
+    conn = sqlite3.connect('src/messages.db', timeout=10.0)
     return conn
 
 def init_database():
