@@ -1,5 +1,6 @@
 import sqlite3
 import asyncio
+import sys
 from functools import partial
 from telethon import TelegramClient, events
 from telethon.tl.types import InputChannel, MessageMediaWebPage
@@ -20,19 +21,27 @@ load_dotenv()
 DEEPL_AUTH_KEY = os.getenv("DEEPL_AUTH_KEY")
 translator = deepl.Translator(DEEPL_AUTH_KEY)
 
-# Logging setup
-logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.INFO)
-logging.getLogger('telethon').setLevel(logging.INFO)
+# Unified logging setup - logs go to both stdout (for docker logs) and file (for Flask)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-# Debug loggers
-seq_matcher_logger = logging.getLogger('seq_matcher')
-seq_matcher_logger.setLevel(logging.DEBUG)
-seq_matcher_logger.addHandler(logging.FileHandler('seq_matcher_logs.log'))
+# Format for all log messages
+formatter = logging.Formatter('[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s')
 
-store_msg_logger = logging.getLogger('store_message')
-store_msg_logger.setLevel(logging.DEBUG)
-store_msg_logger.addHandler(logging.FileHandler('store_message_logs.log'))
+# Handler 1: stdout (for docker logs and grep)
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setFormatter(formatter)
+logger.addHandler(stdout_handler)
+
+# Handler 2: file (for Flask SSE streaming)
+file_handler = logging.FileHandler('/tmp/telethon_listener.out.log')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Reduce noise from telethon library
+logging.getLogger('telethon').setLevel(logging.WARNING)
 
 # Load config files
 with open('config.yml', 'rb') as f:
@@ -118,8 +127,13 @@ def store_message(channel_id, message_id, content, link, date):
             "INSERT OR IGNORE INTO messages (channel_id, message_id, content, link, date) VALUES (?, ?, ?, ?, ?)",
             (channel_id, message_id, content, link, date)
         )
+        rows_affected = cursor.rowcount
         conn.commit()
-        store_msg_logger.debug(f"Stored message: Channel {channel_id}, Message ID {message_id}")
+
+        if rows_affected > 0:
+            logger.debug(f"Stored new message: Channel {channel_id}, Message ID {message_id}")
+        else:
+            logger.debug(f"Duplicate message skipped: Channel {channel_id}, Message ID {message_id}")
     except Exception as e:
         logger.error(f"Failed to store message {channel_id}/{message_id}: {e}", exc_info=True)
     finally:
