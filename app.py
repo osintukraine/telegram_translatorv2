@@ -2,7 +2,11 @@ from flask import Flask, Response, render_template_string, jsonify, request
 import time
 import os
 import sqlite3
+import sys
 from datetime import datetime, timedelta
+
+# Add src directory to path for imports
+sys.path.insert(0, 'src')
 
 app = Flask(__name__)
 
@@ -244,9 +248,32 @@ DASHBOARD_TEMPLATE = """
                                     </a>
                                 </div>
                                 <p class="text-sm text-slate-300 mb-2" x-text="msg.reason"></p>
-                                <div class="bg-slate-800 rounded p-3">
-                                    <p class="text-xs text-slate-400 mb-1">Content Preview:</p>
-                                    <p class="text-sm text-slate-200 font-mono" x-text="msg.content_preview"></p>
+                                <!-- Translated Content (for quick review) -->
+                                <div x-show="msg.content_translated" class="bg-blue-900/20 border border-blue-700 rounded p-3 mb-2">
+                                    <p class="text-xs text-blue-300 mb-1">📝 Translated (English):</p>
+                                    <p class="text-sm text-slate-100" x-text="msg.content_translated"></p>
+                                </div>
+                                <!-- Original Content -->
+                                <div class="bg-slate-800 rounded p-3 mb-3">
+                                    <p class="text-xs text-slate-400 mb-1">Original Content Preview:</p>
+                                    <p class="text-sm text-slate-300 font-mono text-xs" x-text="msg.content_preview"></p>
+                                </div>
+                                <!-- False Positive Recovery -->
+                                <div class="flex gap-2 items-center">
+                                    <button @click="unmarkSpam(msg.id, false)"
+                                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                                        ✓ Not Spam (Learn)
+                                    </button>
+                                    <button @click="unmarkSpam(msg.id, true)"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                        ✓ Not Spam + Forward
+                                    </button>
+                                    <span x-show="msg.recovering" class="text-xs text-yellow-300">
+                                        ⏳ Processing...
+                                    </span>
+                                    <span x-show="msg.recovered" class="text-xs text-green-300">
+                                        ✓ Recovered! Patterns learned.
+                                    </span>
                                 </div>
                             </div>
                         </template>
@@ -358,8 +385,46 @@ DASHBOARD_TEMPLATE = """
                         const url = `/api/spam?limit=50&offset=${offset}${this.spamFilter ? '&type=' + this.spamFilter : ''}`;
                         const response = await fetch(url);
                         this.spam = await response.json();
+                        // Add reactive properties for UI state
+                        this.spam.messages.forEach(msg => {
+                            msg.recovering = false;
+                            msg.recovered = false;
+                        });
                     } catch (error) {
                         console.error('Failed to load spam:', error);
+                    }
+                },
+
+                async unmarkSpam(spamId, shouldForward) {
+                    try {
+                        // Find message and mark as recovering
+                        const msg = this.spam.messages.find(m => m.id === spamId);
+                        if (msg) msg.recovering = true;
+
+                        const response = await fetch(`/api/spam/${spamId}/unmark`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({forward: shouldForward})
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            if (msg) {
+                                msg.recovering = false;
+                                msg.recovered = true;
+                            }
+                            // Reload stats to update counts
+                            await this.loadStats();
+                            // Optional: Show success message with learned patterns
+                            console.log('Learned patterns:', result.learned_patterns);
+                        } else {
+                            alert('Error: ' + (result.error || 'Unknown error'));
+                            if (msg) msg.recovering = false;
+                        }
+                    } catch (error) {
+                        console.error('Failed to unmark spam:', error);
+                        alert('Failed to unmark spam: ' + error.message);
                     }
                 },
 
@@ -558,6 +623,46 @@ def api_spam():
 
         result = get_spam_messages(limit=limit, offset=offset, spam_type=spam_type)
         return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/spam/<int:spam_id>/unmark", methods=["POST"])
+def api_unmark_spam(spam_id):
+    """
+    Unmark a message as spam (false positive recovery).
+
+    Learns patterns from the message and optionally forwards it.
+    """
+    try:
+        from spam_learning import learn_from_false_positive
+
+        data = request.get_json() or {}
+        should_forward = data.get('forward', False)
+
+        result = learn_from_false_positive(spam_id, should_forward)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/learned-patterns")
+def api_learned_patterns():
+    """Get summary of learned patterns."""
+    try:
+        from spam_learning import get_learned_patterns_summary
+
+        result = get_learned_patterns_summary()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/learned-patterns/<int:pattern_id>", methods=["DELETE"])
+def api_delete_pattern(pattern_id):
+    """Delete a learned pattern."""
+    try:
+        from spam_learning import delete_learned_pattern
+
+        success = delete_learned_pattern(pattern_id)
+        return jsonify({'success': success})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

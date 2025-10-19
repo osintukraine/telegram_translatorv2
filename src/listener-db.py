@@ -102,8 +102,33 @@ def init_database():
             spam_type TEXT NOT NULL,
             reason TEXT,
             content_preview TEXT,
+            content_translated TEXT,
             link TEXT,
             UNIQUE(channel_id, message_id)
+        )
+        ''')
+        # Create learned patterns table (self-learning spam filter)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS learned_patterns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pattern_type TEXT NOT NULL,
+            pattern_value TEXT NOT NULL,
+            action TEXT NOT NULL,
+            confidence INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(pattern_type, pattern_value, action)
+        )
+        ''')
+        # Create spam recovery tracking table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS spam_recovered (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            spam_id INTEGER NOT NULL,
+            recovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            forwarded BOOLEAN DEFAULT 0,
+            learned_patterns_json TEXT,
+            FOREIGN KEY (spam_id) REFERENCES spam_filtered(id)
         )
         ''')
         # Create indexes for better performance
@@ -111,6 +136,8 @@ def init_database():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_channel ON messages(channel_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_spam_date ON spam_filtered(date DESC)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_spam_type ON spam_filtered(spam_type)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_learned_patterns ON learned_patterns(pattern_type, action)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_pattern_confidence ON learned_patterns(confidence DESC)')
         conn.commit()
         logger.info("Database initialized successfully")
     finally:
@@ -150,16 +177,18 @@ def store_message(channel_id, message_id, content, link, date):
     finally:
         conn.close()
 
-def store_spam(channel_id, message_id, spam_type, reason, content, link, date):
-    """Store filtered spam message for metrics and analysis."""
+def store_spam(channel_id, message_id, spam_type, reason, content, content_translated, link, date):
+    """Store filtered spam message for metrics and analysis (with translation for dashboard review)."""
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
         # Truncate content preview to 200 chars
         content_preview = (content[:200] + '...') if len(content) > 200 else content
+        # Truncate translation to 500 chars for dashboard readability
+        translated_preview = (content_translated[:500] + '...') if content_translated and len(content_translated) > 500 else content_translated
         cursor.execute(
-            "INSERT OR IGNORE INTO spam_filtered (channel_id, message_id, date, spam_type, reason, content_preview, link) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (channel_id, message_id, date, spam_type, reason, content_preview, link)
+            "INSERT OR IGNORE INTO spam_filtered (channel_id, message_id, date, spam_type, reason, content_preview, content_translated, link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (channel_id, message_id, date, spam_type, reason, content_preview, translated_preview, link)
         )
         conn.commit()
         logger.debug(f"Stored spam: {spam_type} - Channel {channel_id}, Message ID {message_id}")
@@ -288,14 +317,16 @@ async def handle_message(event, news_channel, photos_channel, videos_channel, co
 
         untranslated_msg = event.message.message or ""
 
-        # Check for spam (financial spam, off-topic content)
-        is_spam_message, spam_reason = is_spam(untranslated_msg, link)
+        # Check for spam (financial spam, off-topic content) with learned patterns
+        is_spam_message, spam_reason = is_spam(untranslated_msg, link, channel_id=chat.id)
         if is_spam_message:
             logger.info(f"Skipping spam message: {spam_reason} - {link}")
             # Determine spam type from reason
             spam_type = "financial" if "Financial spam" in spam_reason else "off-topic"
-            # Store spam for metrics
-            store_spam(chat.id, message_id, spam_type, spam_reason, untranslated_msg, link, date)
+            # Translate spam for dashboard review (during testing phase)
+            spam_translation = await translate_async(untranslated_msg) if untranslated_msg else ""
+            # Store spam for metrics (with translation)
+            store_spam(chat.id, message_id, spam_type, spam_reason, untranslated_msg, spam_translation, link, date)
             # Also store as seen to avoid reprocessing
             store_message(chat.id, message_id, untranslated_msg, link, date)
             return

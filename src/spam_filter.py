@@ -35,31 +35,39 @@ PAYMENT_DOMAINS = [
 ]
 
 # Donation keywords (multi-language)
+# NOTE: These are SPECIFIC phrases, not generic words like "help" or "support"
 DONATION_KEYWORDS = [
-    # Ukrainian
+    # Ukrainian - SPECIFIC donation language
     r'\bдонат',
-    r'\bпідтримк',
-    r'\bзбір',
-    r'\bдопомог',
-    r'\bперерахув',
-    r'\bреквізит',
-    r'\bконверт',
+    r'\bпідтримайте канал',
+    r'\bпідтримайте автор',
+    r'\bзбір коштів',
+    r'\bзбір на ',  # "fundraising for"
+    r'\bперерахувати',  # transfer (money)
+    r'\bреквізити',  # bank details
     r'\bякщо хочете підтримати',
     r'\bбуду вдячн',
+    r'\bбуду радий',
+    r'\bскинуть',  # chip in
 
-    # Russian
+    # Russian - SPECIFIC donation language
     r'\bдонат',
-    r'\bподдержк',
-    r'\bсбор',
-    r'\bпомощ',
-    r'\bперечисл',
-    r'\bреквизит',
+    r'\bподдержите канал',
+    r'\bподдержите автор',
+    r'\bсбор средств',
+    r'\bсбор на ',  # "fundraising for"
+    r'\bперечислить',  # transfer (money)
+    r'\bреквизиты',  # bank details (plural)
     r'\bесли хотите поддержать',
     r'\bбуду благодарен',
+    r'\bбуду рад',
+    r'\bскинуть',  # chip in
+    r'\bвыделить.*руб',  # allocate X rubles
 
-    # English
+    # English - SPECIFIC donation language
     r'\bdonat',
     r'\bsupport us',
+    r'\bsupport.{0,10}channel',  # support the/our/this channel
     r'\bfundraising',
     r'\btip jar',
     r'\bcontribut',
@@ -162,6 +170,7 @@ WAR_RELATED_KEYWORDS = [
     r'\bputin',
     r'\bwagner',
     r'\bchechen',
+    r'\bсво',  # СВО - Special Military Operation (Russian term for the war)
 
     # Military/war terms (avoid overly generic terms)
     r'\barmy',
@@ -281,20 +290,38 @@ def is_off_topic(text: str) -> Tuple[bool, str]:
     return False, ""
 
 
-def is_spam(text: str, link: str = "") -> Tuple[bool, str]:
+def is_spam(text: str, link: str = "", channel_id: int = None) -> Tuple[bool, str]:
     """
-    Main spam detection function.
+    Main spam detection function with learned pattern checking.
 
-    Checks both financial spam and off-topic content.
+    Checks learned whitelist patterns first, then financial spam and off-topic content.
 
     Args:
         text: Message content (original language)
         link: Message link (optional, for logging)
+        channel_id: Channel ID (optional, for learned pattern matching)
 
     Returns:
         (is_spam, reason) - True if spam detected, with explanation
     """
-    # Check financial spam first (higher priority)
+    # Check learned whitelist patterns FIRST (bypass spam filter if trusted)
+    if channel_id is not None:
+        try:
+            # Import here to avoid circular dependency
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(__file__))
+            from spam_learning import check_learned_patterns
+
+            should_whitelist, whitelist_reason = check_learned_patterns(text, channel_id)
+            if should_whitelist:
+                logger.info(f"Whitelisted by learned pattern: {whitelist_reason} - {link}")
+                return False, ""  # NOT spam (learned pattern)
+        except Exception as e:
+            # Don't fail spam detection if learning system has issues
+            logger.warning(f"Failed to check learned patterns: {e}")
+
+    # Check financial spam (higher priority)
     is_financial, reason = is_financial_spam(text)
     if is_financial:
         logger.info(f"Financial spam detected: {reason} - {link}")
