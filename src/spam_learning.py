@@ -23,8 +23,8 @@ def get_db_connection():
 
 
 def extract_ngrams(text: str, n: int = 3) -> List[str]:
-    """Extract n-grams (word sequences) from text."""
-    words = re.findall(r'\b\w+\b', text.lower())
+    """Extract n-grams (word sequences) from text, preserving case."""
+    words = re.findall(r'\b\w+\b', text)  # Preserve original case
     if len(words) < n:
         return []
     return [' '.join(words[i:i+n]) for i in range(len(words) - n + 1)]
@@ -35,31 +35,49 @@ def extract_patterns_from_message(content: str, channel_id: int) -> Dict[str, Li
     Extract learnable patterns from a message.
 
     Returns dict with pattern types:
-    - channel: [channel_id]
     - trigram: [3-word phrases]
     - named_entity: [capitalized words/phrases]
+
+    NOTE: Channel-level whitelisting is NOT used to avoid missing
+    actual spam from mixed-content channels in war coverage context.
     """
     patterns = {
-        'channel': [str(channel_id)],
         'trigram': [],
         'named_entity': []
     }
 
     # Extract trigrams (3-word sequences)
     trigrams = extract_ngrams(content, n=3)
-    # Keep only trigrams that appear meaningful (not too generic)
+
+    # Filter out generic trigrams - keep only meaningful ones
+    # Common stop words to avoid (Russian and English)
+    stop_words = {
+        'the', 'and', 'or', 'but', 'for', 'with', 'this', 'that',
+        'в', 'и', 'на', 'с', 'по', 'из', 'к', 'от', 'за', 'о', 'для',
+        'что', 'как', 'это', 'был', 'была', 'были'
+    }
+
+    meaningful_trigrams = []
     for trigram in trigrams:
-        # Skip if contains only common words
-        if not any(word in trigram for word in ['the', 'and', 'or', 'but', 'в', 'и', 'на', 'с']):
-            patterns['trigram'].append(trigram)
+        words = trigram.split()
+        # Skip if all words are stop words or too short
+        if len(words) == 3 and not all(word in stop_words or len(word) < 3 for word in words):
+            # Prefer trigrams with at least one capitalized word or number
+            if any(word[0].isupper() or word.isdigit() for word in words if word):
+                meaningful_trigrams.append(trigram)
+
+    patterns['trigram'] = meaningful_trigrams[:10]  # Keep top 10 most specific
 
     # Extract named entities (capitalized words/phrases in Cyrillic or Latin)
     # Match: Минюст, СВО, Ministry of Justice, NATO, etc.
-    named_entities = re.findall(r'\b[А-ЯЁA-Z][а-яёa-z]+(?:\s+[А-ЯЁA-Z][а-яёa-z]+)*\b', content)
-    patterns['named_entity'] = list(set(named_entities))[:5]  # Keep top 5 unique
+    # Minimum 2 characters to avoid single letters
+    named_entities = re.findall(r'\b[А-ЯЁA-Z][а-яёa-z]{1,}(?:\s+[А-ЯЁA-Z][а-яёa-z]+)*\b', content)
 
-    # Limit trigrams to top 10 most specific
-    patterns['trigram'] = patterns['trigram'][:10]
+    # Filter out common single words that aren't actually entities
+    common_starts = {'The', 'A', 'An', 'In', 'On', 'At', 'To', 'For', 'With'}
+    filtered_entities = [e for e in named_entities if e not in common_starts and len(e) > 2]
+
+    patterns['named_entity'] = list(set(filtered_entities))[:8]  # Keep top 8 unique
 
     return patterns
 
@@ -95,6 +113,10 @@ def check_learned_patterns(content: str, channel_id: int) -> Tuple[bool, str]:
     """
     Check if message matches any learned whitelist patterns.
 
+    Uses content-based patterns (named entities, trigrams) only.
+    Channel-level whitelisting is NOT used to avoid missing spam
+    from mixed-content channels.
+
     Returns:
         (should_whitelist, reason) - True if message should bypass spam filter
     """
@@ -102,18 +124,7 @@ def check_learned_patterns(content: str, channel_id: int) -> Tuple[bool, str]:
     try:
         cursor = conn.cursor()
 
-        # Check channel whitelist (most specific)
-        cursor.execute('''
-            SELECT confidence FROM learned_patterns
-            WHERE pattern_type = 'channel'
-            AND pattern_value = ?
-            AND action = 'whitelist'
-            AND confidence > 0
-        ''', (str(channel_id),))
-        channel_match = cursor.fetchone()
-        if channel_match:
-            return True, f"Trusted channel (confidence: {channel_match['confidence']})"
-
+        # NOTE: Channel whitelisting intentionally disabled for war coverage context
         # Check named entity whitelist
         named_entities = re.findall(r'\b[А-ЯЁA-Z][а-яёa-z]+(?:\s+[А-ЯЁA-Z][а-яёa-z]+)*\b', content)
         for entity in named_entities:
